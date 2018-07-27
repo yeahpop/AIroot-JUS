@@ -238,7 +238,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 				newString := ""
 				if t.IsPublic {
 					if t.IsStatic && !t.IsGet && !t.IsSet {
-						newString = "__JUS__.__WINDOW__[\f]['" + s.className + "']."
+						newString = "__WINDOW__[__APPDOMAIN__]['" + s.className + "']."
 					} else {
 						newString = _this_ + "."
 					}
@@ -246,7 +246,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 
 				} else {
 					if t.IsStatic && !t.IsGet && !t.IsSet {
-						newString = "__JUS__.__WINDOW__[\f]['" + s.className + "']."
+						newString = "__WINDOW__[__APPDOMAIN__]['" + s.className + "']."
 					} else {
 						newString = _pri_ + "."
 					}
@@ -422,7 +422,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 		p++
 		if t.Domain == "" && t.TagType == 0 && !t.IsAttr {
 			if s.hMap[t.Value] != nil {
-				tlt = append(tlt, &Tag{Value: "__JUS__.__WINDOW__[\f]['" + s.hMap[t.Value].Name + "']", TagType: 0})
+				tlt = append(tlt, &Tag{Value: "__WINDOW__[__APPDOMAIN__]['" + s.hMap[t.Value].Name + "']", TagType: 0})
 				continue
 			}
 		}
@@ -467,7 +467,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 					}
 
 					if paramVar != nil && paramValue != nil {
-						buffer = append(buffer, &Tag{Value: paramVar.Value + "=" + paramVar.Value + " || " + IfStr(isStatic, "__JUS__.__WINDOW__[\f]['"+s.jus.className+"']."+paramValue.Value, paramValue.Value) + ";\r\n", TagType: 0})
+						buffer = append(buffer, &Tag{Value: paramVar.Value + "=" + paramVar.Value + " || " + IfStr(isStatic, "__WINDOW__[__APPDOMAIN__]['"+s.jus.className+"']."+paramValue.Value, paramValue.Value) + ";\r\n", TagType: 0})
 						paramVar = nil
 						paramValue = nil
 					}
@@ -549,7 +549,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 					}
 				}
 				//if t.IsPublic {
-				//tlt = append(tlt, &Tag{Value: IfStr(t.IsSet, "var", _this_+".") + t.Value + " = __JUS__.__WINDOW__[\f]['" + s.className + "']." + t.Value + ";", TagType: 0})
+				//tlt = append(tlt, &Tag{Value: IfStr(t.IsSet, "var", _this_+".") + t.Value + " = __WINDOW__[__APPDOMAIN__]['" + s.className + "']." + t.Value + ";", TagType: 0})
 				//}
 			} else if t.IsVar {
 				level = 0
@@ -591,7 +591,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 		if pgs.Setter != nil {
 			tsb += "set:"
 			if pgs.Setter.IsStatic {
-				tsb += "__JUS__.__WINDOW__[\f]['" + s.className + "']." + pgs.Setter.Value
+				tsb += "__WINDOW__[__APPDOMAIN__]['" + s.className + "']." + pgs.Setter.Value
 			} else {
 				tsb += pgs.Setter.Value
 			}
@@ -602,7 +602,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 			}
 			tsb += "get:"
 			if pgs.Getter.IsStatic {
-				tsb += "__JUS__.__WINDOW__[\f]['" + s.className + "']." + pgs.Getter.Value
+				tsb += "__WINDOW__[__APPDOMAIN__]['" + s.className + "']." + pgs.Getter.Value
 			} else {
 				tsb += pgs.Getter.Value
 			}
@@ -816,7 +816,7 @@ func (s *Script) loadClass(path string) string {
 		tmpName = className
 	}
 
-	return IfStr(tmpName != "", "getModule('"+tmpName+"',\f)", "")
+	return IfStr(tmpName != "", "getModule('"+tmpName+"',__APPDOMAIN__)", "")
 }
 
 /**

@@ -2,7 +2,9 @@ package util
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	. "jus"
@@ -33,10 +35,11 @@ type JUS struct {
 	parent              *JUS
 	domain              string
 	className           string
-	relativePath        string  //相对路径
-	node                *HTML   //此HTML节点
-	innerContent        []*HTML //此HTML节点的子元素Child
-	contentToList       []*HTML //节点为变量的储存列表
+	relativePath        string        //相对路径
+	node                *HTML         //此HTML节点
+	innerContent        []*HTML       //此HTML节点的子元素Child
+	contentToList       []*HTML       //节点为变量的储存列表
+	contentToInitBuf    *bytes.Buffer //全局 内部content to 到 指定变量前的汇总
 	paramValue          *Attr
 	innerValue          string //内部代码转string
 	html                *HTML
@@ -59,7 +62,11 @@ type JUS struct {
 	componentCode       []*Attr          //控件默认代码
 	scriptElement       map[string]*Attr //需要导入的头文件，类似与import
 	scriptElementBuffer []string
-	componentParams     []string //所有编译时初始化集合，只有顶级的元素可以接受
+	componentParams     []string         //所有编译时初始化集合，只有顶级的元素可以接受
+	count               int              //自动化数量
+	moduleMap           map[string]*Attr //模块地图
+	runList             []*RunElem       //run列表，用于记录模块的执行顺序，非常重要的一个字段
+	IsImport            string           //是否为导入类
 }
 
 /**
@@ -72,6 +79,8 @@ type JUS struct {
 func (j *JUS) CreateFromString(root string, domain string, innerContent []*HTML, code string, className string) bool {
 	className = Replace(className, "/", ".")
 	className = Replace(className, "\\", ".")
+	j.moduleMap = make(map[string]*Attr, 10)
+	j.contentToInitBuf = bytes.NewBufferString("")
 	j.pkgMap = make(map[string]string, 10)
 	j.idMap = make(map[string]*HTMLObject, 100)
 	j.root = root
@@ -102,6 +111,8 @@ func (j *JUS) CreateFromString(root string, domain string, innerContent []*HTML,
 func (j *JUS) CreateFrom(root string, domain string, node *HTML, className string) bool {
 	className = Replace(className, "/", ".")
 	className = Replace(className, "\\", ".")
+	j.moduleMap = make(map[string]*Attr, 10)
+	j.contentToInitBuf = bytes.NewBufferString("")
 	j.pkgMap = make(map[string]string, 10)
 	j.idMap = make(map[string]*HTMLObject, 10)
 	j.root = root
@@ -177,24 +188,31 @@ func (j *JUS) PushImportScript(value *Attr) {
 		j.GetRoot().scriptElement = make(map[string]*Attr, 10)
 	}
 	if j.GetRoot().scriptElement[value.Name] == nil {
+		sb := bytes.NewBufferString("")
+		if Index(value.Name, "/") != -1 || Index(value.Name, "\\") != -1 {
+			j.ToFormatLine("I", value.Name, "P"+value.Name, sb) //P 代表外部资源包 Package，可以加载/js/JQuery.min.js也可以http://jquery.com/jquery.min.js
+			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, sb.String())
+			return
+		}
 		j.GetRoot().scriptElement[value.Name] = value
 		ft := &JUS{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 		if ft.CreateFromParent(j.root, "", nil, strings.TrimSpace(value.Name), j) {
+			ft.IsImport = value.Name
 			ft.resPath = j.resPath
 			if ft.IsScript() {
 				scriptObj := &Script{}
 				scriptObj.CreateFrom(j, j.root, j.domain, j.paramValue, j.extendsScriptBuffer, strings.TrimSpace(value.Name))
 				tpr, _ := ft.GetInitString()
-				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t__JUS__._MODULE_CONTENT_LIST_[\f]['"+strings.TrimSpace(value.Name)+"'] = "+scriptObj.ReadFromString(tpr)+";\r\n") //j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t__JUS__._MODULE_CONTENT_LIST_[\f]['"+strings.TrimSpace(value.Name)+"'] = "+scriptObj.ReadFromString(j.scanMedia(tpr))+";\r\n")
+				j.ToFormatLine("I", value.Name, "S"+scriptObj.ReadFromString(tpr), sb)
+				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, sb.String()) //j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t_MODULE_CONTENT_LIST_[\f]['"+strings.TrimSpace(value.Name)+"'] = "+scriptObj.ReadFromString(j.scanMedia(tpr))+";\r\n")
 			} else {
-				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t__JUS__._MODULE_CONTENT_LIST_[\f]['"+strings.TrimSpace(value.Name)+"'] = \""+Escape(ft.ToFormatString())+"\";\r\n")
+				j.ToFormatLine("I", value.Name, "H"+ft.ToFormatString(), sb)
+				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, sb.String())
 			}
 		} else {
-			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t__JUS__.____ERROR____(\""+value.Name+" isn't Exist.\");\r\n")
+			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t____ERROR____(\""+value.Name+" isn't Exist.\");\r\n")
 		}
-
 	}
-
 }
 
 /**
@@ -472,9 +490,8 @@ func (j *JUS) scanHTML(child []*HTML) {
 			p.SetAttr("id", j.domain)
 		} else {
 			if p.GetAttr("id") == "" {
-				p.SetAttr("id", p.GetAttr("domain")+getName())
+				p.SetAttr("id", p.GetAttr("domain")+j.getName())
 			} else {
-
 				if p.GetAttr("id")[0] == '$' {
 					p.SetAttr("src_id", p.GetAttr("id")[1:])
 					p.SetAttr("id", p.GetAttr("domain")+p.GetAttr("id")[1:])
@@ -497,13 +514,13 @@ func (j *JUS) scanHTML(child []*HTML) {
 				attrName = j.pkgMap[v]
 				if attrName != "" {
 					p.SetAttrName(v, attrName)
-					j.PushCommandScript(&Attr{attrName, "__JUS__.__PUSH_COMMAND__('" + p.GetAttr("domain") + "','" + p.GetAttr("id") + "','-" + v + "',getModule('" + attrName + "',\f)({target:" + p.GetAttr("id") + ",data:'" + attrValue + "'}));"})
+					j.PushCommandScript(&Attr{attrName, "-" + v + "\001" + attrName + "\001" + p.GetAttr("id") + "\001" + attrValue})
 					j.PushImportScript(&Attr{attrName, ""})
 				}
 			} else {
 				v = v[1:]
 				attrName = strings.ToLower(v)
-				j.PushCommandScript(&Attr{attrName, "__JUS__.__PUSH_COMMAND__('" + p.GetAttr("domain") + "','" + p.GetAttr("id") + "','-" + v + "',getModule('" + attrName + "',\f)({target:" + p.GetAttr("id") + ",data:'" + attrValue + "'}));"})
+				j.PushCommandScript(&Attr{attrName, "'-" + v + "'," + p.GetAttr("id") + "," + attrValue})
 				j.PushImportScript(&Attr{attrName, ""})
 			}
 		}
@@ -512,7 +529,7 @@ func (j *JUS) scanHTML(child []*HTML) {
 			if len(arr) > 1 {
 				tagName = arr[1]
 			}
-			var tFunc *JUS = &JUS{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
+			var tFunc *JUS = &JUS{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH, IsImport: j.IsImport}
 
 			if tFunc.CreateFromParent(j.root, p.GetAttr("id"), p, tagName, j) {
 				tFunc.resPath = j.resPath
@@ -523,10 +540,13 @@ func (j *JUS) scanHTML(child []*HTML) {
 						//j.componentCode = append(j.componentCode, &Attr{p.GetAttr("id"), p.GetConstructerCode()})
 
 					}
-					tHTML = tFunc.ReadHTML()
+					th := tFunc.ReadHTML()
+					j.AddRun(&RunElem{"L", j.domain, j.ToFormatLine("L", j.domain, th.ToString(), j.GetRoot().contentToInitBuf)})
+					tHTML = &HTML{}
 				} else {
 					if p.GetConstructerParameter() != "" {
 						j.componentParam = append(j.componentParam, &Attr{p.GetAttr("id"), p.GetConstructerParameter()})
+						j.AddRun(&RunElem{Type: "P", Name: p.GetAttr("id"), Value: "[" + j.componentInitParam(&Attr{Name: p.GetAttr("id"), Value: p.GetConstructerParameter()}) + "]"})
 					}
 					if p.GetConstructerCode() != "" {
 						j.componentCode = append(j.componentCode, &Attr{p.GetAttr("id"), p.GetConstructerCode()})
@@ -550,6 +570,14 @@ func (j *JUS) scanHTML(child []*HTML) {
 		}
 		j.scanHTML(p.Child())
 	}
+}
+
+func (j *JUS) componentInitParam(value *Attr) string {
+	s := j.componentInitCode(value)
+	script := &HTMLScript{}
+	script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
+	str := script.FormatString(s)
+	return str
 }
 
 /**
@@ -628,7 +656,6 @@ func (j *JUS) cssFormat() string {
 
 func (j *JUS) importHTML() {
 	sets := j.html.GetElementsByTagName("@import")
-
 	attrsMap := make(map[string]string, 10)
 	attrsMap["value"] = ""
 	html := &HTML{tagData: attrsMap}
@@ -691,11 +718,27 @@ func (j *JUS) importHTML() {
 /**
  * 获取注释信息
  */
-func (j *JUS) noteHTML() {
+func (j *JUS) rootHTML() {
 	child := j.html.Filter("!")
 	for _, v := range child {
 		v.Remove()
 	}
+	child = j.html.Filter("style")
+	for _, v := range child {
+		j.styleBuffer.Write(ListToHTMLStringBytes(v.Child()))
+		v.Remove()
+	}
+	child = j.html.Filter("css")
+	for _, v := range child {
+		j.cssBuffer.Write(ListToHTMLStringBytes(v.Child()))
+		v.Remove()
+	}
+	child = j.html.Filter("script")
+	for _, v := range child {
+		j.scriptBuffer.Write(ListToHTMLStringBytes(v.Child()))
+		v.Remove()
+	}
+
 }
 
 /**
@@ -935,8 +978,8 @@ func (j *JUS) ReadHTML() *HTML {
 		//解析节点属性值
 		if j.node != nil {
 			for _, va := range j.node.Attrs() {
-				tst.WriteString(j.domain)
-				tst.WriteRune('.')
+				//tst.WriteString(Replace(j.domain, "\b", "____"))
+				tst.WriteString("$$.")
 				tst.WriteString(va.Name)
 				tst.WriteString("=\"")
 				tst.WriteString(Escape(va.Value))
@@ -959,7 +1002,7 @@ func (j *JUS) ReadHTML() *HTML {
 					}
 				} else {
 					if v2.GetAttr("id") == "" {
-						v2.SetAttr("id", v2.GetAttr("domain")+getName())
+						v2.SetAttr("id", v2.GetAttr("domain")+j.getName())
 					} else {
 
 						if v2.GetAttr("id")[0] == '$' {
@@ -973,6 +1016,7 @@ func (j *JUS) ReadHTML() *HTML {
 					var tFunc *JUS = &JUS{SYSTEM_PATH: j.SYSTEM_PATH, CLASS_PATH: j.CLASS_PATH}
 					j.idMap[v2.GetAttr("src_id")] = &HTMLObject{Name: v2.GetAttr("id"), HTMLObjectType: 1}
 					if tFunc.CreateFromParent(j.root, v2.GetAttr("id"), v2, v2.TagName(), j) {
+						fmt.Println("TagName>>", v2.TagName(), tFunc.IsScript())
 						if tFunc.IsScript() {
 							tFunc.SetConstructor(&Attr{v2.TagName(), v2.GetConstructerParameter()}).setExtend(v2.GetAttr("id") == j.domain)
 							if v2.GetConstructerCode() != "" {
@@ -1000,14 +1044,14 @@ func (j *JUS) ReadHTML() *HTML {
 							tst2.WriteString(v2.GetAttr("id"))
 							tst2.WriteString(" = getModule(\"")
 							tst2.WriteString(v2.TagName())
-							tst2.WriteString("\",\f")
+							tst2.WriteString("\",__APPDOMAIN__")
 							tst2.WriteString(htps)
 							tst2.WriteString(");\r\n")
 							tst2.Write(tst.Bytes())
 							tst = tst2
 						}
 					}
-					tst.WriteString(j.domain)
+					tst.WriteString(Replace(j.domain, "\b", "____"))
 					tst.WriteRune('.')
 					tst.WriteString(v.TagName())
 					tst.WriteString("=")
@@ -1016,12 +1060,11 @@ func (j *JUS) ReadHTML() *HTML {
 				}
 			}
 		}
-		tHTML.ReadFromString("<script> var " + j.domain + " = getModule(\"" + j.className + "\",\f)(" + tps.String() + ");\r\n" + tst.String() + "</script>")
-
+		tHTML.ReadFromString("(function(){ var $$ = getModule(\"" + j.className + "\",__APPDOMAIN__)(" + tps.String() + ");\r\n" + tst.String() + "return $$;})")
 		return tHTML
 	}
 
-	j.noteHTML()
+	j.rootHTML()
 	j.importHTML()
 	j.initObj(j.html)
 	j.includeCode([]*HTML{j.html})
@@ -1051,12 +1094,10 @@ func (j *JUS) ReadHTML() *HTML {
 
 	j.scanHTML([]*HTML{j.html})
 	j.componentId([]*HTML{j.html})
+
 	for _, p := range j.contentToList {
-		j.scriptBuffer.WriteString("____.")
-		j.scriptBuffer.WriteString(p.GetAttr("____CONTENT____"))
-		j.scriptBuffer.WriteString(".push(")
-		j.scriptBuffer.WriteString(p.GetAttr("id"))
-		j.scriptBuffer.WriteString(");\r\n")
+		j.scriptBuffer.WriteString("____." + p.GetAttr("____CONTENT____") + "=_MODULE_CONTENT_LIST_ATTR_[__DOMAIN__]")
+		break
 	}
 	if j.html.GetAttr("class") == "" || Index(j.html.GetAttr("class"), j.domain) == -1 {
 		j.html.SetAttr("class", j.domain+IfStr(j.html.GetAttr("class") != "", " "+j.html.GetAttr("class"), " "))
@@ -1072,19 +1113,6 @@ func (j *JUS) ReadHTML() *HTML {
 	script := &HTMLScript{}
 	script.CreateFrom(j, j.root, j.domain, j.paramValue, j.innerValue, j.extendsScriptBuffer)
 	scriptCodeString := script.ReadFromString(j.scriptBuffer.String())
-	if len(j.componentParam) > 0 {
-		scriptBuffer := bytes.NewBufferString("")
-		for _, v := range j.componentParam {
-			scriptBuffer.WriteString("__JUS__._MODULE_CONTENT_LIST_ATTR_['")
-			scriptBuffer.WriteString(v.Name)
-			scriptBuffer.WriteString("'] = [")
-			scriptBuffer.WriteString(j.componentInitCode(v))
-			scriptBuffer.WriteString("];\r\n")
-		}
-		tLst := j.GetComponentParamSet()
-		*tLst = append(*tLst, script.FormatString(scriptBuffer.String()))
-		scriptCode.WriteString(script.FormatString(scriptBuffer.String()))
-	}
 	scriptCode.WriteString("</script>")
 	j.html.InsertFromString(scriptCode.String(), 0)
 
@@ -1125,6 +1153,7 @@ func (j *JUS) ReadHTML() *HTML {
 	}
 	//最终加入静态函数变量
 	if j.parent == nil {
+		st := bytes.NewBufferString("")
 		sb := bytes.NewBufferString("<script>")
 		for _, v := range j.scriptElementBuffer {
 			sb.WriteString(v)
@@ -1132,18 +1161,21 @@ func (j *JUS) ReadHTML() *HTML {
 		j.staticCode = j.GetStaticCodeMap()
 		for name, value := range j.staticCode {
 			for _, attr := range value {
-				sb.WriteString("__JUS__.__POS_VALUE__")
-				sb.WriteString(attr.Value)
-				sb.WriteString(";\r\n")
-				sb.WriteString("__JUS__.__ADD_STATIC_METHOD__('" + name + "','" + attr.Name + "',__JUS__.__POS_VALUE__" + ",\f);\r\n")
-				sb.WriteString("__JUS__.__WINDOW__[\f]['" + name + "'].__STATIC__();\r\n")
+				st.WriteString("__POS_VALUE__")
+				st.WriteString(attr.Value)
+				//st.WriteString("__ADD_STATIC_METHOD__('" + name + "','" + attr.Name + "',__POS_VALUE__" + ",__APPDOMAIN__);")
+				j.ToFormatLine("S", name, attr.Name+" "+st.String(), sb)
+				st.Reset()
+				//sb.WriteString("__WINDOW__[\f]['" + name + "'].__STATIC__();\r\n")
 			}
 		}
 		j.staticScript = j.GetStaticMap()
 		for name, value := range j.staticScript {
 			for _, attr := range value {
-				sb.WriteString("__JUS__.__POS_VALUE__" + attr.Value + ";\r\n")
-				sb.WriteString("__JUS__.__ADD_STATIC_METHOD__('" + name + "','" + attr.Name + "',__JUS__.__POS_VALUE__" + ",\f);\r\n")
+				st.WriteString("__POS_VALUE__" + attr.Value + ";\r\n")
+				//st.WriteString("__ADD_STATIC_METHOD__('" + name + "','" + attr.Name + "',__POS_VALUE__" + ",\f);")
+				j.ToFormatLine("S", name, attr.Name+" "+st.String(), sb)
+				st.Reset()
 			}
 		}
 
@@ -1160,7 +1192,7 @@ func (j *JUS) ReadHTML() *HTML {
 		if len(j.componentParams) > 0 {
 			for _, v := range j.componentParams {
 				sb.WriteString(v)
-				sb.WriteString("\r\n")
+				//sb.WriteString("\r\n")
 			}
 		}
 
@@ -1175,14 +1207,16 @@ func (j *JUS) ReadHTML() *HTML {
 		sb.WriteString("<css>")
 		j.styleCode = j.GetStyleCodeMap()
 		for name, value := range j.styleCode {
-			sb.WriteString(strconv.Itoa(StringLen(name)))
-			sb.WriteRune('%')
-			sb.WriteString(name)
-			sb.WriteString(Escape(value))
-			sb.WriteRune('\n')
+			j.ToFormatLine("A", name, value, sb)
+			//sb.WriteString(strconv.Itoa(StringLen(name)))
+			//sb.WriteRune('%')
+			//sb.WriteString(name)
+			//sb.WriteString(Escape(value))
+			//sb.WriteRune('\n')
+
 		}
 		if sb.Len() > 5 {
-			sb.Truncate(sb.Len() - 1)
+			//sb.Truncate(sb.Len() - 1)
 			cssHTML := &HTML{}
 			sb.WriteString("</css>")
 			cssHTML.ReadFromString(sb.String())
@@ -1217,30 +1251,124 @@ func (j *JUS) componentInitCode(value *Attr) string {
 	return sb.String()
 }
 
+/**
+ * 获取模块地图
+ */
+func (j *JUS) GetModuleMap() map[string]*Attr {
+	if j.parent != nil {
+		return j.parent.GetModuleMap()
+	}
+
+	return j.moduleMap
+}
+
+/**
+ * 添加执行命令
+ */
+func (j *JUS) AddRun(attr *RunElem) {
+	if j.IsImport != "" {
+		if j.parent != nil && j.parent.IsImport != "" && j.parent.IsImport == j.IsImport {
+			j.parent.AddRun(attr)
+			return
+		}
+	} else {
+		if j.parent != nil {
+			j.parent.AddRun(attr)
+			return
+		}
+	}
+	j.runList = append(j.runList, attr)
+}
+
+func (j *JUS) getName() string {
+	if j.parent != nil {
+		return j.parent.getName()
+	}
+	j.count++
+	return "a" + strconv.Itoa(j.count)
+}
+
+/**
+ * 格式化输出内容
+ * @param cls		信息类型
+ * @param moduleName	模块名称
+ * @param value		内容
+ */
+func (j *JUS) ToFormatLine(cls string, moduleName string, value string, data *bytes.Buffer) string {
+	md5Ctx := md5.New()
+	md5Ctx.Write([]byte(value))
+	cipherStr := md5Ctx.Sum(nil)
+	bs := hex.EncodeToString(cipherStr)
+	m := j.GetModuleMap()[bs]
+	if m != nil && m.Name == moduleName {
+		return bs
+	}
+	j.GetModuleMap()[bs] = &Attr{Name: moduleName}
+	data.WriteString(cls)
+	data.WriteString(strconv.Itoa(StringLen(moduleName)))
+	data.WriteString("%")
+	data.WriteString(strconv.Itoa(StringLen(value)))
+	data.WriteByte(' ')
+	data.WriteString(moduleName)
+	data.WriteByte(' ')
+	data.WriteString(bs)
+	data.WriteByte(' ')
+	data.WriteString(value)
+	data.WriteString("\r\n")
+	return bs
+}
+
+/**
+ * 格式化输出内容
+ * @param cls		信息类型
+ * @param moduleName	模块名称
+ * @param value		内容
+ */
+func (j *JUS) ToFormatRun(cls string, domain string, value string, data *bytes.Buffer) {
+	data.WriteString(cls)
+	data.WriteString(strconv.Itoa(StringLen(domain)))
+	data.WriteString("%")
+	data.WriteString(strconv.Itoa(StringLen(value)))
+	data.WriteByte(' ')
+	data.WriteString(domain)
+	data.WriteByte(' ')
+	data.WriteString(value)
+	data.WriteString("\r\n")
+}
+
+/**
+ * JUServer使用的字节流
+ */
 func (j *JUS) ToFormatBytes() []byte {
 	result := j.ReadHTML()
 	stls := result.GetElementsByTagName("css") //获取公共css属性
 	json := bytes.NewBufferString("")
+
 	for _, v := range stls {
-		json.Write(ListToHTMLStringBytes(v.Child()))
-		json.WriteString("\r\n")
+		json.WriteString(ListToHTMLString(v.Child()))
 		v.Remove()
 	}
-	if len(stls) > 0 {
-		json.Truncate(json.Len() - 2)
+	stls = result.GetElementsByTagName("style") //获取公共css属性
+	for _, v := range stls {
+		j.ToFormatLine("B", j.className, ListToHTMLString(v.Child()), json)
+		v.Remove()
 	}
-	json.WriteByte(1)
+	stls = result.GetElementsByTagName("scriptobject") //获取公共css属性
+	for _, v := range stls {
+		j.ToFormatLine("C", j.className, ListToHTMLString(v.Child()), json)
+		v.Remove()
+	}
+
 	spts := result.GetElementsByTagName("script") //获取Script属性
 	for _, v := range spts {
 		json.Write(ListToHTMLStringBytes(v.Child()))
-		json.WriteString("\r\n")
 		v.Remove()
 	}
-	if len(spts) > 0 {
-		json.Truncate(json.Len() - 2)
+	json.Write(j.contentToInitBuf.Bytes())
+	j.ToFormatLine("H", j.className, result.ToString(), json)
+	for _, v := range j.runList {
+		j.ToFormatRun("R"+v.Type, v.Name, v.Value, json)
 	}
-	json.WriteByte(1)
-	json.Write(result.ToStringBytes())
 	return json.Bytes()
 }
 

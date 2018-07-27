@@ -1,0 +1,18 @@
+<div>
+	<@content />
+	<script>
+		public function trigger(event){
+			_self.children("div").each(function(){
+				var $this = $(this);
+				//$this.width($this.width());
+				$this.height($this.attr("height"));
+				
+				var $id = window[$this.attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+			
+		}
+	</script>
+</div>

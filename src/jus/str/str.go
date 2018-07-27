@@ -213,3 +213,33 @@ func readString(code []rune, position int) (string, int) {
 
 	return string(sb), position
 }
+
+/**
+ * 转化成jus识别的$属性值
+ */
+func ToJUSString(value string) string {
+	lst := bytes.NewBufferString("")
+	r := []rune(value)
+	l := len(r)
+	p := 0
+	fc := r[0]
+	var ch rune
+	flag := false
+	for p < l {
+		ch = r[p]
+		p++
+		if ch != '\\' && ch != '$' {
+			flag = false
+		} else if ch == '\\' {
+			flag = !flag
+		}
+		if ch == '$' && flag == false {
+			lst.WriteRune(fc)
+			lst.WriteString("+__NAME__+")
+			lst.WriteRune(fc)
+			continue
+		}
+		lst.WriteRune(ch)
+	}
+	return lst.String()
+}

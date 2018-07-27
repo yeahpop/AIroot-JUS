@@ -1,0 +1,126 @@
+<component.DisplayObject width="100%" height="100%" gap="0">
+	<@content />
+	<script>
+		private static function layoutH(_self,event){
+			_self.css({"display":"flex","flex-flow":"row"});
+			var gap = parseInt(_self.attr("gap"));
+			var tArr = null;
+			var padding = 0;
+			var $obj = _self.find(">div").not(":hidden");
+			var tmp = null;
+			var isAuto = _self.attr("height") == "auto";
+			
+			var contentHeight = _self.height();
+			if(isAuto){
+				tArr = [];
+				contentHeight = 0;
+			}
+			
+			
+			$obj.css({"box-sizing":"border-box"});
+			$obj.each(function(index){
+				var $this = $(this);
+				tmp = $this.attr("width");
+				if(tmp){
+					if(tmp.lastIndexOf("%") == -1){
+						tmp = parseInt(tmp) - gap;
+						$this.css({"width":tmp + "px","flex-shrink":"0"});
+					}else{
+						$this.css({"width":tmp,"flex-shrink":"1"});
+					}
+				}
+				
+			});
+			
+			
+			
+			
+			$obj.each(function(){
+				var $this = $(this);
+				tmp = $this.attr("height");
+				if(isAuto){
+					if(tmp == "auto"){
+						if($this.height()>contentHeight){
+							_self.height(contentHeight = $this.height());
+						}
+					}else{
+						tArr.push($this);
+					}
+					
+				}else{
+					if(tmp && tmp.lastIndexOf("%") == -1){
+						$this.css("height",parseInt(tmp) + "px");
+					}else{
+						$this.css("height",contentHeight + "px");
+					}
+				}
+				
+			});
+			if(tArr){
+				var obp = null;
+				for(var i = 0;i<tArr.length;i++){
+					obp = tArr[i];
+					tmp = obp.attr("height");
+					if(tmp && tmp.lastIndexOf("%") == -1){
+						obp.css(parseInt(tmp) + "px");
+					}else{
+						obp.css(contentHeight + "px");
+					}
+				}
+			}
+			tmp = _self.attr("vertical");
+			if(tmp){
+				switch(tmp){
+					case "top" :
+						_self.css("align-items","flex-start");
+					break;
+					case "center" :
+						_self.css("align-items","center");
+					break;
+					case "bottom" :
+						_self.css("align-items","flex-end");
+					break;
+					default:
+						_self.css("align-items",tmp);
+				}
+				
+			}
+			
+			_self.find(">div").each(function(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+
+		private static function layoutV(_self,event){
+			_self.css({"overflow":"auto","flex-flow":"column"});
+			var $obj = _self.find(">div").not(":hidden");
+			$obj.css({"box-sizing":"border-box"});
+			$obj.each(function(){
+				var $this = $(this);
+				$this.css({width:"100%"});
+			});
+			_self.find(">div").each(function(){
+				var $id = window[$(this).attr("id")];
+				if($id && $id.trigger){
+					$id.trigger(event);
+				}
+			});
+		}
+	
+		/**
+		 *	触发变化
+		 */
+		public function trigger(event){
+			if(event){
+				layoutV(_self,event);
+			}else{
+				layoutH(_self,event);
+			}
+			
+		}
+		
+	</script>
+</component.DisplayObject>
