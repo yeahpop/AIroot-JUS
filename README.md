@@ -77,3 +77,39 @@ JUS 在设计之初，就讲模块化、资源管理、整合其他框架作为�
 ## AIroot-JUS 是重量级框架吗？
 首先，AIroot-JUS 不是框架，他是一个面向前端的渲染平台，采用Google Golang 开发。JUS的默认发布框架包仅仅只有20KB。JUS的设计初衷就是用最简单的代码解决复杂的问题，平台发布代码均以高扩展性、高复用性、高维护性作为思想基础，你可以想象到，一套轻量级的代码量去构建重量级别的项目。  
 因此，JUS是轻量级的平台，但是可以承接复杂的项目。JUS发布的项目是轻量级的，但是具备重量级项目的表现力。
+
+## Hello World
+```html
+<!--
+    Hello World
+    保存到code/Hello.html
+ -->
+<style>
+    body{
+        color:#789abc;
+        font-weight:bold;
+    }
+</style>
+<div>
+    Hello World！
+</div>
+<script>
+    function init(){
+        dom.addEventListener("click",function(){
+            alert("Hello World!");
+        });
+    }
+</script>
+```
+看到了，在JUS平台写程序这又这些，复杂吗？从外表看来他就是一个HTML页面，但是它是一个模块，一个Module Page。
+
+```html
+<!--
+    Index
+    保存到code/Index.html
+ -->
+<div>
+    <Hello />
+</div>
+```
+好了，我们的模块生效了。
