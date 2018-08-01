@@ -1,4 +1,5 @@
 import component.Date.DatePanel;
+var _self = $(dom);
 public var onChange = null;
 private var dp = null;
 private var _dateFormat:String = null;

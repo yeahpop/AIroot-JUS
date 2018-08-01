@@ -39,6 +39,7 @@ type JUS struct {
 	node                *HTML         //此HTML节点
 	innerContent        []*HTML       //此HTML节点的子元素Child
 	contentToList       []*HTML       //节点为变量的储存列表
+	contentTo           string        //内容信息变量添加到
 	contentToInitBuf    *bytes.Buffer //全局 内部content to 到 指定变量前的汇总
 	paramValue          *Attr
 	innerValue          string //内部代码转string
@@ -425,6 +426,9 @@ func (j *JUS) overHTML(node []*HTML) {
 	if len(pList) > 0 {
 		var t []*HTML = nil
 		for _, h := range pList {
+			if h.GetAttr("to") != "" {
+				j.contentTo = h.GetAttr("to")
+			}
 			if child.IsEmpty() { //采用默认自带方案
 				t = h.Child()
 			} else {
@@ -537,11 +541,10 @@ func (j *JUS) scanHTML(child []*HTML) {
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
 					if p.GetConstructerCode() != "" {
 						j.idMap[p.GetAttr("src_id")] = &HTMLObject{Name: p.GetAttr("id"), HTMLObjectType: 1}
-						//j.componentCode = append(j.componentCode, &Attr{p.GetAttr("id"), p.GetConstructerCode()})
 
 					}
 					th := tFunc.ReadHTML()
-					j.AddRun(&RunElem{"L", j.domain, j.ToFormatLine("L", j.domain, th.ToString(), j.GetRoot().contentToInitBuf)})
+					j.AddRun(&RunElem{"L", j.domain, th.ToString()})
 					tHTML = &HTML{}
 				} else {
 					if p.GetConstructerParameter() != "" {
@@ -552,10 +555,14 @@ func (j *JUS) scanHTML(child []*HTML) {
 						j.componentCode = append(j.componentCode, &Attr{p.GetAttr("id"), p.GetConstructerCode()})
 					}
 					tFunc.SetConstructor(&Attr{tagName, p.GetConstructerParameter()}).setExtend(p.GetAttr("id") == j.domain)
+
 					tHTML = tFunc.ReadHTML()
 					tHTML.CopyFrom(p)
 					if len(arr) > 1 {
 						tHTML.SetTagName(arr[0])
+					}
+					if p.GetAttr("____CONTENT____") != "" {
+						j.AddRun(&RunElem{"T", p.GetAttr("id"), ""}) //统一L，但是是系统初始化最后加上的。
 					}
 				}
 			} else {
@@ -1094,11 +1101,10 @@ func (j *JUS) ReadHTML() *HTML {
 
 	j.scanHTML([]*HTML{j.html})
 	j.componentId([]*HTML{j.html})
-
-	for _, p := range j.contentToList {
-		j.scriptBuffer.WriteString("____." + p.GetAttr("____CONTENT____") + "=_MODULE_CONTENT_LIST_ATTR_[__DOMAIN__]")
-		break
+	if j.contentTo != "" {
+		j.scriptBuffer.WriteString("____." + j.contentTo + "=_MODULE_INNER_[__DOMAIN__];")
 	}
+
 	if j.html.GetAttr("class") == "" || Index(j.html.GetAttr("class"), j.domain) == -1 {
 		j.html.SetAttr("class", j.domain+IfStr(j.html.GetAttr("class") != "", " "+j.html.GetAttr("class"), " "))
 	}
@@ -1295,12 +1301,13 @@ func (j *JUS) getName() string {
  * @param value		内容
  */
 func (j *JUS) ToFormatLine(cls string, moduleName string, value string, data *bytes.Buffer) string {
+
 	md5Ctx := md5.New()
 	md5Ctx.Write([]byte(value))
 	cipherStr := md5Ctx.Sum(nil)
 	bs := hex.EncodeToString(cipherStr)
 	m := j.GetModuleMap()[bs]
-	if m != nil && m.Name == moduleName {
+	if cls != "L" && m != nil && m.Name == moduleName {
 		return bs
 	}
 	j.GetModuleMap()[bs] = &Attr{Name: moduleName}

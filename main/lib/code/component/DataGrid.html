@@ -170,6 +170,7 @@
 		&nbsp;
 	</div>
 	<script>
+		var _self = $(dom);
 		//page modify
 		private var url:String = "";
 		private var _comp:Event = null;
@@ -595,7 +596,7 @@
 					dWidth = $th.width() - 1;
 					contentWidth +=  dWidth - _headWidth[index];
 					_headWidth[index] = dWidth;
-					for(var r:int = startRow;r<endRow;r++){
+					for(var r:int = startRow;rowLst.length>0 && r<endRow;r++){
 						rowLst[r].width(contentWidth);
 						rowLst[r].children("div").eq(index).width(_headWidth[index]);
 					}
@@ -816,7 +817,7 @@
 				for(var i:int = 0;i<th.length;i++){
 					contentWidth += parseInt(th.eq(i).outerWidth());
 				}
-				for(var r:int = startRow;r<endRow;r++){
+				for(var r:int = startRow;rowLst.length>0 && r<endRow;r++){
 					rowLst[r].width(contentWidth);
 					for(var i:int = 0;i<th.length;i++){
 						_headWidth[i] = th.eq(i).outerWidth() - 1;

@@ -19,6 +19,7 @@
 	//
 	var _MODULE_CONTENT_LIST_ = {};
 	var _MODULE_CONTENT_LIST_ATTR_ = {};
+	var _MODULE_INNER_ = {};
 	var _INSTANCE_COUNT_ = 0;//被实例化的数量
 	var _MODULE_CONTENT_TEMP_ = null;
 
@@ -474,7 +475,7 @@
 						}
 						__MODULE_EXTEND__[__APPDOMAIN__][v.uuid] = {count:1,method:eval(v.value)};
 					break;
-					case 'S' ://静态类
+					case "S" ://静态类
 						var d = __FORMAT_VALUE__(v.value);
 						(function(){
 							"use strict"
@@ -482,13 +483,6 @@
 							__ADD_STATIC_METHOD__(v.module,d.name,__POS_VALUE__,__APPDOMAIN__);
 						})();
 					break;
-					case 'L' ://内联
-						trace(v.module.replace(/[\b]/g,uuid),v.value);
-						if(!_MODULE_CONTENT_LIST_ATTR_[v.module.replace(/[\b]/g,uuid)]){
-							_MODULE_CONTENT_LIST_ATTR_[v.module.replace(/[\b]/g,uuid)] = [];
-						}
-						_MODULE_CONTENT_LIST_ATTR_[v.module.replace(/[\b]/g,uuid)].push(eval(v.value)());
-						break;
 				}
 				if(isNaN(v.index)){
 					break;
@@ -562,18 +556,22 @@
 			
 		}
 		if(target.toString().toLowerCase() != "[object window]"){
+			target = target.length ? target[0] :target;
 			if(!append){
 				//清除自对象
 				var clearFunc = "";
-				var qt = $(target);
-				qt.find("div[onRemove]").each(function(){
+				var qtLst = target.querySelectorAll("div[onRemove]");
+				for(var i = 0;i<qtLst.length;i++){
 					clearFunc += this.getAttribute("onRemove") + ";\r\n";
-				});
+				}
 				if(clearFunc != ""){
 					(new Function(clearFunc))();
 				}
-				qt.find("*").unbind().remove();
-				qt.append(tmp);
+				
+				//TODO 这里需要清楚所有事件监听
+				
+				//这里要清楚所有dom
+				target.innerHTML = "";
 			}
 			
 			if(target.append){
@@ -583,9 +581,10 @@
 			}
 			
 		}else{
-			if(!_MODULE_CONTENT_TEMP_ || _MODULE_CONTENT_TEMP_.parent().length == 0){
-				_MODULE_CONTENT_TEMP_ = $("<div style='position:fixed;left:10000px;top:10000px;'></div>");
-				$("body").append(_MODULE_CONTENT_TEMP_);
+			if(!_MODULE_CONTENT_TEMP_ || _MODULE_CONTENT_TEMP_.parentNode == null){
+				_MODULE_CONTENT_TEMP_ = document.createElement("div");
+				_MODULE_CONTENT_TEMP_.style = "position:fixed;left:10000px;top:10000px;";
+				document.body.appendChild(_MODULE_CONTENT_TEMP_);
 			}
 			_MODULE_CONTENT_TEMP_.append(tmp);
 		}
@@ -608,8 +607,6 @@
 	
 	function __HAV_MODULE__(module,__APPDOMAIN__){
 		var app = __MODULE_RUNLIST__[__APPDOMAIN__];
-		//var method = __MODULE_METHOD__[__APPDOMAIN__];
-		//var extend = __MODULE_EXTEND__[__APPDOMAIN__];
 		if(app){
 			if(app[module]){
 				return true;
@@ -669,6 +666,18 @@
 							AddC2C(uuid,p,__APPDOMAIN__)//AddCommandToCompoent
 							//__PUSH_COMMAND__(uuid,__NAME__,'-lang',getModule('.Lang',__APPDOMAIN__)({target:window[uuid + 'a1'],data:'lang/index-lang.json'}));
 							//__PUSH_COMMAND__(uuid,p.name.replace(/[\b]/g,uuid),'-lang',getModule('.Lang',__APPDOMAIN__)({target:window[uuid + 'a1'],data:'lang/index-lang.json'}));
+						break;
+						case "T"://执行外连接函数
+							if(!_MODULE_INNER_[uuid]){
+								_MODULE_INNER_[uuid] = [];
+							}
+							_MODULE_INNER_[uuid].push(window[p.name.replace(/[\b]/g,uuid)]);
+						break;
+						case "L"://执行外连接函数
+							if(!_MODULE_INNER_[uuid]){
+								_MODULE_INNER_[uuid] = [];
+							}
+							_MODULE_INNER_[uuid].push(eval(p.value)());
 						break;
 					}
 				}

@@ -1,8 +1,8 @@
 <module>
 	<iframe id='iframe'  style='width:100%;border:none;'>
 	<script>
+		var _self = $(dom);
 		private var frame = null;
-		
 		public var onLoad:Function = null;
 		private function init(url){
 			frame = document.getElementById("$iframe");

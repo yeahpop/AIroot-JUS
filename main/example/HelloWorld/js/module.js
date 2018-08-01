@@ -565,15 +565,15 @@
 			if(!append){
 				//清除自对象
 				var clearFunc = "";
-				var qt = $(target);
-				qt.find("div[onRemove]").each(function(){
+				var qtLst = target.querySelectorAll("div[onRemove]");
+				for(var i = 0;i<qtLst.length;i++){
 					clearFunc += this.getAttribute("onRemove") + ";\r\n";
-				});
+				}
 				if(clearFunc != ""){
 					(new Function(clearFunc))();
 				}
-				qt.find("*").unbind().remove();
-				qt.append(tmp);
+				
+				//TODO 这里需要清楚所有事件监听
 			}
 			
 			if(target.append){
@@ -583,9 +583,10 @@
 			}
 			
 		}else{
-			if(!_MODULE_CONTENT_TEMP_ || _MODULE_CONTENT_TEMP_.parent().length == 0){
-				_MODULE_CONTENT_TEMP_ = $("<div style='position:fixed;left:10000px;top:10000px;'></div>");
-				$("body").append(_MODULE_CONTENT_TEMP_);
+			if(!_MODULE_CONTENT_TEMP_ || _MODULE_CONTENT_TEMP_.parentNode == null){
+				_MODULE_CONTENT_TEMP_ = document.createElement("div");
+				_MODULE_CONTENT_TEMP_.style = "position:fixed;left:10000px;top:10000px;";
+				document.body.appendChild(_MODULE_CONTENT_TEMP_);
 			}
 			_MODULE_CONTENT_TEMP_.append(tmp);
 		}

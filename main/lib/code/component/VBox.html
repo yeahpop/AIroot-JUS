@@ -1,6 +1,7 @@
 <component.DisplayObject width="100%" height="100%">
 	<@content />
 	<script>
+		var _self = $(dom);
 		private static function layoutV(_self,event){
 			var $obj = _self.children("div").not(":hidden");
 			var aSum = 0;

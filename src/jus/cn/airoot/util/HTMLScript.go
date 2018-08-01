@@ -689,7 +689,7 @@ func (s *HTMLScript) ReadFromString(script string) string {
 	if err != nil {
 		return ""
 	}
-	templ = strings.Replace(templ, "{@CLASS_NAME}", "//"+s.jus.className+"\r\n"+s.jus.contentToInitBuf.String(), -1)
+	templ = strings.Replace(templ, "{@CLASS_NAME}", "//"+s.jus.className+"\r\n", -1)
 	templ = strings.Replace(templ, "{@domain}", s.jus.domain, -1)
 	templ = strings.Replace(templ, "{@Base}", "\b", -1)
 

@@ -1,6 +1,7 @@
 <div>
 	<@content />
 	<script>
+		var _self = $(dom);
 		public function trigger(event){
 			_self.children("div").each(function(){
 				var $this = $(this);
