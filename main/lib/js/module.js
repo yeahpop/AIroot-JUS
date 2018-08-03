@@ -40,11 +40,12 @@
 	var ____ERROR_COUNT____ = 0;
 	var ____ERROR____ = function(value){
 		console.log("JUS ERROR: " + value);
-		return;
-		var label = $("<div style='position:absolute;color:#fefefe;background-color:#f05500;margin:5px 5px 0px 5px;border-radius:5px;padding:2px 10px 2px 10px;font-size:14px;font-weight:bold;'>" + ____ERROR_COUNT____ ++ + ". " + value + "</div>");
-		$("body").append(label);
-		label.css("top",____ERROR_POS____);
-		____ERROR_POS____ += label.outerHeight(true);
+		var label = document.createElement("div");
+		label.style = 'position:absolute;color:#fefefe;background-color:#f05500;margin:5px 5px 0px 5px;border-radius:5px;padding:2px 10px 2px 10px;font-size:14px;font-weight:bold;';
+		label.text = ____ERROR_COUNT____ ++ + ". " + value;
+		document.body.appendChild(label);
+		label.style.top = ____ERROR_POS____;
+		____ERROR_POS____ += 26;
 	}
 
 
@@ -483,6 +484,10 @@
 							__ADD_STATIC_METHOD__(v.module,d.name,__POS_VALUE__,__APPDOMAIN__);
 						})();
 					break;
+					case "O" ://Error
+						____ERROR____(v.value);
+					break;
+						
 				}
 				if(isNaN(v.index)){
 					break;
@@ -913,7 +918,3 @@
 	window.__WINDOW__ = __WINDOW__;
 	window.JUS = JUS;
 })();
-
-
-
-

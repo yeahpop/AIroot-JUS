@@ -54,6 +54,9 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 	var hObj *HTMLObject = nil
 	var tjs *MScript = nil
 	lst := js.GetJUIScriptData()
+	//for k, v := range lst {
+	//	fmt.Println(k, v.Domain, ">>", v.Value)
+	//}
 
 	tl := make([]*Tag, 0, 1000)
 	tlt := make([]*Tag, 0, 1000)

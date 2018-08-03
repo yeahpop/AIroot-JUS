@@ -35,12 +35,11 @@ type JUS struct {
 	parent              *JUS
 	domain              string
 	className           string
-	relativePath        string        //相对路径
-	node                *HTML         //此HTML节点
-	innerContent        []*HTML       //此HTML节点的子元素Child
-	contentToList       []*HTML       //节点为变量的储存列表
-	contentTo           string        //内容信息变量添加到
-	contentToInitBuf    *bytes.Buffer //全局 内部content to 到 指定变量前的汇总
+	relativePath        string  //相对路径
+	node                *HTML   //此HTML节点
+	innerContent        []*HTML //此HTML节点的子元素Child
+	contentToList       []*HTML //节点为变量的储存列表
+	contentTo           string  //内容信息变量添加到
 	paramValue          *Attr
 	innerValue          string //内部代码转string
 	html                *HTML
@@ -81,7 +80,6 @@ func (j *JUS) CreateFromString(root string, domain string, innerContent []*HTML,
 	className = Replace(className, "/", ".")
 	className = Replace(className, "\\", ".")
 	j.moduleMap = make(map[string]*Attr, 10)
-	j.contentToInitBuf = bytes.NewBufferString("")
 	j.pkgMap = make(map[string]string, 10)
 	j.idMap = make(map[string]*HTMLObject, 100)
 	j.root = root
@@ -113,7 +111,6 @@ func (j *JUS) CreateFrom(root string, domain string, node *HTML, className strin
 	className = Replace(className, "/", ".")
 	className = Replace(className, "\\", ".")
 	j.moduleMap = make(map[string]*Attr, 10)
-	j.contentToInitBuf = bytes.NewBufferString("")
 	j.pkgMap = make(map[string]string, 10)
 	j.idMap = make(map[string]*HTMLObject, 10)
 	j.root = root
@@ -167,7 +164,6 @@ func (j *JUS) CreateFrom(root string, domain string, node *HTML, className strin
 		}
 		j.html.ReadFromString(t) //j.html.ReadFromString(j.scanMedia(t))
 	} else if j.jsPath != "" {
-		//j.GetScriptElementMap()[className] = className//change by sunxy
 		j.PushImportScript(&Attr{className, ""}) //change by sunxy 2018-3-2
 		j.scriptFile = true
 	} else {
@@ -211,7 +207,9 @@ func (j *JUS) PushImportScript(value *Attr) {
 				j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, sb.String())
 			}
 		} else {
-			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t____ERROR____(\""+value.Name+" isn't Exist.\");\r\n")
+			//j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, "\t____ERROR____(\""+value.Name+" isn't Exist.\");\r\n")
+			j.ToFormatLine("O", value.Name, value.Name+" isn't Exist.", sb)
+			j.GetRoot().scriptElementBuffer = append(j.GetRoot().scriptElementBuffer, sb.String())
 		}
 	}
 }
@@ -1371,7 +1369,7 @@ func (j *JUS) ToFormatBytes() []byte {
 		json.Write(ListToHTMLStringBytes(v.Child()))
 		v.Remove()
 	}
-	json.Write(j.contentToInitBuf.Bytes())
+	//json.Write(j.contentToInitBuf.Bytes())
 	j.ToFormatLine("H", j.className, result.ToString(), json)
 	for _, v := range j.runList {
 		j.ToFormatRun("R"+v.Type, v.Name, v.Value, json)

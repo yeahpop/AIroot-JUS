@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "Airoot platform 0.9.3 &ws"
+var version string = "Airoot platform 0.9.4 &ws"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)

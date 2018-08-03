@@ -739,6 +739,7 @@ func (m *MScript) attrMethod(i int, domain string, paramType int) int {
 			p.IsAttr = true
 			break
 		}
+		break
 	}
 	return i
 }
