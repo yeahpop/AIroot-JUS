@@ -78,6 +78,24 @@ JUS 在设计之初，就将模块化、资源管理、整合其他框架作为�
 首先，AIroot-JUS 不是框架，他是一个面向前端的渲染平台，采用Google Golang 开发。JUS的默认发布框架包仅仅只有20KB。JUS的设计初衷就是用最简单的代码解决复杂的问题，平台发布代码均以高扩展性、高复用性、高维护性作为思想基础，你可以想象到，一套轻量级的代码量去构建重量级别的项目。  
 因此，JUS是轻量级的平台，但是可以承接复杂的项目。JUS发布的项目是轻量级的，但是具备重量级项目的表现力。
 
+# 搭建环境
+下载本站项目，运行Release目录下的main.exe程序。
+<img src='README/images/01.jpg' />
+添加服务节点和项目目录,我们选择Release/example/下的项目,并运行在80端口：
+```cmd
+    add a0 example/HelloWorld :80
+```
+然后打开Chrome/FireFox/Edge浏览器，输入http://localhost/
+<img src="README/images/02.jpg" />
+
+# 创建第一个工程
+在main.exe程序直接输入 ctp myproject,这里会在main.exe同级创建一个工程目录：
+```cmd
+ctp myproject
+```
+运行效果：
+<img src="README/images/03.jpg" />
+
 ## Hello World
 ```html
 <!--
@@ -86,8 +104,12 @@ JUS 在设计之初，就将模块化、资源管理、整合其他框架作为�
  -->
 <style>
     body{
+        cursor:pointer;
+		text-align:center;
         color:#789abc;
-        font-weight:bold;
+		font-size:90px;
+		font-weight:bold;
+		padding-top:10%;
     }
 </style>
 <div>
