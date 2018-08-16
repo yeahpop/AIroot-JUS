@@ -95,7 +95,12 @@ ctp myproject
 ```
 运行效果：
 <img src="README/images/03.jpg" />
-
+然后继续输入 run a0 :80
+```cmd
+run a0 :80
+```
+打开浏览器，输入 http://localhost/
+<img src="README/images/04.jpg" />
 ## Hello World
 ```html
 <!--
@@ -105,11 +110,11 @@ ctp myproject
 <style>
     body{
         cursor:pointer;
-		text-align:center;
+        text-align:center;
         color:#789abc;
-		font-size:90px;
-		font-weight:bold;
-		padding-top:10%;
+        font-size:90px;
+        font-weight:bold;
+        padding-top:10%;
     }
 </style>
 <div>
