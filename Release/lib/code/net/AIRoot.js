@@ -4,6 +4,7 @@
  * @type 通讯类
  */
 class AIRoot{
+	var hid = -1;//心跳id
 	var ws;
 	var msgFrame:int = 0;
 	var host:String;
@@ -33,8 +34,12 @@ class AIRoot{
 			if(_onopen){
 				var p:int = e.data.indexOf(" ");
 				_onopen({status:e.data.substring(0,p),data:e.data.substring(p + 1)});
+				
 			}
 			if(e.data.length >6 && e.data.substring(0,7) == "accept "){
+				hid = setInterval(function(){
+					ws.send("0");//心跳
+				},10000);
 				ws.onmessage = function(e){
 					if(_onmessage){
 						_onmessage(formatPackage(e.data));
@@ -47,11 +52,13 @@ class AIRoot{
 			
 		}
 		ws.onClose = function(e){
+			clearInterval(hid);
 			if(_onclose){
 				_onclose(e)
 			}
 		}
 		ws.onerror = function(e){
+			clearInterval(hid);
 			if(_onerror){
 				_onerror(e)
 			}

@@ -83,8 +83,11 @@ func (p *Package) getDat() string {
 /**
  * 转换给指定用户
  */
-func (p *Package) ToUser(m map[string]*connectElement) {
+func (p *Package) ToUser(m map[string]*connectElement) bool {
 	r := p.router()
+	if len(r) == 0 {
+		return false
+	}
 	d := []byte(p.from + p.getDat())
 
 	if r[len(r)-1] == '*' { //批量广播
@@ -108,5 +111,5 @@ func (p *Package) ToUser(m map[string]*connectElement) {
 		}
 
 	}
-
+	return true
 }

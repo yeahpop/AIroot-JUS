@@ -324,16 +324,34 @@ func (u *JusServer) wsHandler(ws *websocket.Conn) {
 					ws.Write([]byte(value))
 					for {
 						n, err = ws.Read(msg)
+						if n == 1 {
+							fmt.Println("...")
+							continue //心跳
+						}
 						if err != nil {
 							break
 						}
+						if len(msg) < ws.Len() {
+							msgt := make([]byte, ws.Len()-len(msg))
+							n, err = ws.Read(msgt)
+							if err != nil {
+								break
+							}
+							for _, v := range msgt {
+								msg = append(msg, v)
+							}
+							n = len(msg)
+						}
 						fmt.Println("read:", string(msg[0:n]))
 						pkg := Package{from: cmds[1], data: msg[0:n]}
-						fmt.Println(pkg.router(), pkg.uuid(), pkg.frame(), pkg.value())
 						u.wsUser.RLock()
-						pkg.ToUser(u.wsUser.list)
+						if pkg.ToUser(u.wsUser.list) == false {
+							u.wsUser.RUnlock()
+							break
+						}
 						u.wsUser.RUnlock()
 					}
+
 				} else {
 					ws.Write([]byte(value))
 				}
