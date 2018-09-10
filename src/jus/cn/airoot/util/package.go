@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -91,7 +90,7 @@ func (p *Package) ToUser(m map[string]*connectElement) bool {
 	d := []byte(p.from + p.getDat())
 
 	if r[len(r)-1] == '*' { //批量广播
-		fmt.Println("批量广播")
+		//fmt.Println("批量广播")
 		n := r[:len(r)-1]
 		for k, v := range m {
 			if k != p.from {
@@ -102,12 +101,9 @@ func (p *Package) ToUser(m map[string]*connectElement) bool {
 		}
 
 	} else {
-		fmt.Println("指定用户", p.router())
 		client := m[p.router()]
 		if client != nil {
 			client.Conn.Write(d)
-		} else {
-			fmt.Println("对方不存在")
 		}
 
 	}

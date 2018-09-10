@@ -62,7 +62,8 @@ type JusServer struct {
 	Datetime      time.Time
 	server        *http.Server
 	fServer       http.Handler
-	osName        string //操作系统名称
+	fServerList   map[string]http.Handler //内部映射的路径
+	osName        string                  //操作系统名称
 	SysPath       string
 	RootPath      string
 	jusDirName    string
@@ -184,6 +185,7 @@ func (u *JusServer) SetProject(path string) bool {
 		rpath, _ := filepath.Abs(path)
 		u.RootPath = rpath
 		u.fServer = http.FileServer(http.Dir(path))
+		u.fServerList = make(map[string]http.Handler)
 		u.proxy = u.proxy[0:0]
 		for _, v := range u.GetAttrLike("proxy") {
 			u.AddDomainProxy(v[0], v[1])
@@ -280,6 +282,8 @@ func (u *JusServer) CreateModule(cls string, className string) bool {
  */
 func (u *JusServer) Close() error {
 	u.Status = false
+	u.fServer = nil
+	u.fServerList = nil
 	if u.server != nil {
 		return u.server.Close()
 	}
@@ -325,7 +329,6 @@ func (u *JusServer) wsHandler(ws *websocket.Conn) {
 					for {
 						n, err = ws.Read(msg)
 						if n == 1 {
-							fmt.Println("...")
 							continue //心跳
 						}
 						if err != nil {
@@ -342,7 +345,6 @@ func (u *JusServer) wsHandler(ws *websocket.Conn) {
 							}
 							n = len(msg)
 						}
-						fmt.Println("read:", string(msg[0:n]))
 						pkg := Package{from: cmds[1], data: msg[0:n]}
 						u.wsUser.RLock()
 						if pkg.ToUser(u.wsUser.list) == false {
@@ -356,13 +358,14 @@ func (u *JusServer) wsHandler(ws *websocket.Conn) {
 					ws.Write([]byte(value))
 				}
 			} else {
-				fmt.Println("未识别请求")
+
+				fmt.Println(ws.RemoteAddr().String() + ": undefind commands")
 			}
 		}
 
 	}
 	ce.Connected = false
-	fmt.Println("连接被断开")
+	fmt.Println(ws.LocalAddr().String() + " is close.")
 	u.testConnect <- 1
 
 }
@@ -467,10 +470,7 @@ func (u *JusServer) jusEditEvt(w http.ResponseWriter, req *http.Request) {
 }
 
 func (u *JusServer) root(w http.ResponseWriter, req *http.Request) {
-	//判断是否有域名反向代理
-	if u.hasProxy(w, req) {
-		return
-	}
+
 	if req.URL.Path == "/" {
 
 	} else {
@@ -1058,41 +1058,6 @@ func (u *JusServer) getDirList(path string) string {
 }
 
 /**
- * 判断是否有反向代理
- */
-func (u *JusServer) hasProxy(w http.ResponseWriter, req *http.Request) bool {
-	var p *proxyMap = nil
-	for _, v := range u.proxy {
-		if Index(req.Host, v.pattern.Host) == 0 {
-			p = v
-			break
-		}
-	}
-	if p != nil {
-		if p.cls == 0 {
-			path := p.path + req.URL.Path + req.URL.RawQuery
-			fmt.Println(">>", path)
-			value, err := GetBytes(path)
-			if err != nil {
-				value = []byte("<h1>404</h1>")
-			}
-			w.WriteHeader(404)
-			w.Write(value)
-		} else {
-			remote, err := url.Parse(p.path)
-			if err != nil {
-				panic(err)
-			}
-			proxy := httputil.NewSingleHostReverseProxy(remote)
-			proxy.ServeHTTP(w, req)
-
-		}
-		return true
-	}
-	return false
-}
-
-/**
  * 判断是否有可用映射
  */
 func (u *JusServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Request) bool {
@@ -1106,14 +1071,8 @@ func (u *JusServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Re
 
 	if p != nil {
 		if p.cls == 0 {
-			path := p.path + Substring(urlPath.Path, StringLen(p.pattern), -1) + urlPath.RawQuery
-
-			value, err := GetBytes(path)
-			if err != nil {
-				value = []byte("<h1>404</h1>")
-			}
-			w.WriteHeader(404)
-			w.Write(value)
+			req.URL.Path = Substring(urlPath.Path, StringLen(p.pattern), -1)
+			u.fServerList[p.pattern].ServeHTTP(w, req)
 		} else {
 			remote, err := url.Parse(p.path)
 			if err != nil {
@@ -1304,8 +1263,16 @@ func (u *JusServer) AddDomainProxy(pattern string, path string) {
 func (u *JusServer) AddProxy(pattern string, path string) {
 	fmt.Println("pattern", pattern, "-->", path)
 	cls := 0
-	if Index(path, "http://") == 0 {
+	if Index(strings.ToLower(path), "http://") == 0 || Index(strings.ToLower(path), "https://") == 0 {
 		cls = 1
+	}
+	if cls == 0 {
+		if Exist(path) {
+			u.fServerList[pattern] = http.FileServer(http.Dir(path))
+		} else {
+			fmt.Println("pattern", pattern, "-->", path, "isn't exist.")
+		}
+
 	}
 	u.pattern[pattern] = &urlMap{pattern, path, cls}
 }

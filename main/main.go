@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "Airoot platform 0.9.5 &ws"
+var version string = "Airoot platform 0.9.7 &ws"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -460,9 +460,11 @@ func RetData(cmds []string) bool {
 /**
  * 执行批处理文件
  */
-func BatCode(value string, w bool) string {
+func BatCode(value string, w bool) (bool, string) {
 	str := ""
 	tmp := ""
+	_run := false
+	running := true
 	if code, err := GetCode(value); err == nil {
 		list := strings.Split(code, "\n")
 		for _, v := range list {
@@ -475,13 +477,16 @@ func BatCode(value string, w bool) string {
 				continue
 			}
 			if len(v) > 0 {
-				_, tmp = commandEvt(v)
+				_run, tmp = commandEvt(v)
+				if !_run {
+					running = _run
+				}
 				str += tmp
 			}
 		}
 	}
 
-	return str
+	return running, str
 }
 
 func commandEvt(value string) (bool, string) {
@@ -496,14 +501,14 @@ func command(cmds []string) (bool, string) {
 	if len(cmds) > 0 {
 		switch cmds[0] {
 		case "-c": //退出命令行
-			str += DevPrintln(2, "Change to web controller pattern.")
-			commandEvt("webc")
-			return false, ""
+			str += DevPrintln(2, "Console Input Method Unabled.")
+			return false, str
 		case "bat": //批处理文件
 			if len(cmds) > 1 {
 				for i := 1; i < len(cmds); i++ {
 					if Exist(cmds[i]) {
-						str += BatCode(cmds[i], true)
+						_, v := BatCode(cmds[i], true)
+						str += v
 					} else {
 						str += DevPrintln(335, lang["文件不存在"], cmds[i]) //文件不存在
 					}
@@ -1013,18 +1018,22 @@ func main() {
 		fmt.Println("ARGS", args)
 	}
 	//键盘输入
-	BatCode("jus.conf", true) //程序默认执行一个控制类
-	running, quit := commandEvt(args)
-
+	running, _ := BatCode("jus.conf", true) //程序默认执行一个控制类
+	quit := ""
 	if running {
-		reader := bufio.NewReader(os.Stdin)
-		for running {
-			data, _, _ := reader.ReadLine()
-			running, quit = commandEvt(string(data))
+		running, quit = commandEvt(args)
 
+		if running {
+			reader := bufio.NewReader(os.Stdin)
+			for running {
+				data, _, _ := reader.ReadLine()
+				running, quit = commandEvt(string(data))
+
+			}
 		}
 	}
 
+	fmt.Println(">>>>>>>")
 	for exitFlag && quit != "quit" {
 		time.Sleep(1 * time.Second)
 	}
