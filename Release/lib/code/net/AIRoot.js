@@ -105,6 +105,6 @@ class AIRoot{
 	 */
 	public function send(router:String,uuid:String,value:String){
 		msgFrame++;
-		ws.send(router + "\0" + uuid + "\0" + msgFrame + "\0" +value);
+		ws.send(router + "\0" + uuid + "\0" + msgFrame + "\0" +value + "\0");
 	}
 }//

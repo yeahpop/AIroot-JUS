@@ -301,6 +301,8 @@ func (u *JusServer) wsHandler(ws *websocket.Conn) {
 	ce := &connectElement{Time: time.Now().Unix(), Connected: false, Conn: ws}
 	u.connectedList = append(u.connectedList, ce)
 	msg := make([]byte, 256) //8 8 4 4 2 ...
+	buf := new(bytes.Buffer)
+	behind := 0
 	n, err := ws.Read(msg)
 	var cmds []string
 	if err != nil {
@@ -326,32 +328,42 @@ func (u *JusServer) wsHandler(ws *websocket.Conn) {
 					u.wsUser.Unlock()
 					fmt.Println(cmds[1] + " Login.")
 					ws.Write([]byte(value))
+					Dp := 0
+				roll:
 					for {
-						n, err = ws.Read(msg)
-						if n == 1 {
+						buf.Reset()
+						behind = 0
+						for {
+							n, err = ws.Read(msg)
+							if err != nil {
+								break roll
+							}
+							buf.Write(msg[0:n])
+							if ws.Len() <= 131 {
+								Dp = 6
+							} else if ws.Len() <= 65543 {
+								Dp = 8
+							} else {
+								Dp = 14
+							}
+							if buf.Len()-behind == ws.Len()-Dp {
+								if msg[n-1] == 0 {
+									break
+								}
+								behind += buf.Len()
+							}
+						}
+						if buf.Len() == 1 {
 							continue //心跳
 						}
-						if err != nil {
-							break
-						}
-						if len(msg) < ws.Len() {
-							msgt := make([]byte, ws.Len()-len(msg))
-							n, err = ws.Read(msgt)
-							if err != nil {
-								break
-							}
-							for _, v := range msgt {
-								msg = append(msg, v)
-							}
-							n = len(msg)
-						}
-						pkg := Package{from: cmds[1], data: msg[0:n]}
+						pkg := Package{from: cmds[1], data: buf.Bytes()}
 						u.wsUser.RLock()
 						if pkg.ToUser(u.wsUser.list) == false {
 							u.wsUser.RUnlock()
 							break
 						}
 						u.wsUser.RUnlock()
+
 					}
 
 				} else {
