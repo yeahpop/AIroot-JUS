@@ -39,14 +39,15 @@
 			ai.login("screen");
 			ai.onOpen = function(){
 				//alert("connect");
-				var str = "";
+				str = "";
 				for(var i = 0;i<100000;i++){
 					str += "a";
 				}
+				/*
 				//return;
 				for(var k = 0;k<1000;k++){
 					ai.send("screen","",str + k);
-				}
+				}*/
 			};
 			var k = 0;
 			ai.onMessage = function(e){

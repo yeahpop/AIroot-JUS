@@ -38,7 +38,7 @@ class AIRoot{
 			}
 			if(e.data.length >6 && e.data.substring(0,7) == "accept "){
 				hid = setInterval(function(){
-					ws.send("0");//心跳
+					ws.send("\0");//心跳
 				},10000);
 				ws.onmessage = function(e){
 					if(_onmessage){
