@@ -451,18 +451,8 @@
 							_MODULE_CONTENT_LIST_[__APPDOMAIN__][v.module] = eval("(" + v.value.substr(1) + ")");
 							__FORMAT__(v.value.substr(1),uuid,__APPDOMAIN__,module);
 						}else if(v.value.charAt(0) == "P"){//Package 引入外部包
-							console.log({url:v.value.substr(1)});
-							var isImport = false;
-							var importStr = v.value.substr(1);
-							for(var n = 0;n<__PACKAGE_LIST__.length;n++){
-								if(__PACKAGE_LIST__[n].url == importStr){
-									isImport = true;
-									break;
-								}
-							}
-							if(!isImport){
-								__PACKAGE_LIST__.push({url:importStr});
-							}
+							//__PACKAGE__(v.value.substr(1));
+							__PACKAGE_LIST__.push({url:v.value.substr(1)});
 						}else{
 							_MODULE_CONTENT_LIST_[__APPDOMAIN__][v.module] = v.value.substr(1);
 							__FORMAT__(v.value.substr(1),uuid,__APPDOMAIN__,module);
@@ -601,7 +591,7 @@
 				_MODULE_CONTENT_TEMP_.style = "position:fixed;left:10000px;top:10000px;";
 				document.body.appendChild(_MODULE_CONTENT_TEMP_);
 			}
-			_MODULE_CONTENT_TEMP_.append(tmp);
+			_MODULE_CONTENT_TEMP_.appendChild(tmp);
 		}
 		
 	}
