@@ -32,7 +32,7 @@ HTML页就是控件(模块页)，你可以发布这个模块到任何人的Super
     <tr>
         <td><img src='README/images/as.png' /></td>
         <td valign='top'>
-            <h2>支持高级 Script语法糖</h2>
+            <h2>支持高级Script语法糖</h2>
 支持更好的变相对象特性，同时兼容JavaScript的写法。
         </td>
     </tr>
