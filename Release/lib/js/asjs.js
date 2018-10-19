@@ -2298,7 +2298,6 @@ function URLLoader(id){
 					if(urlRequest.dataType == "json"){
 						req.setRequestHeader("Content-Type","application/json;charset=UTF-8");
 						tmp = JSON.stringify(urlRequest.data);
-						alert(tmp);
 					}else if(urlRequest.dataType == "text"){
 						req.setRequestHeader("Content-Type","text/plain;charset=UTF-8");
 					}else{

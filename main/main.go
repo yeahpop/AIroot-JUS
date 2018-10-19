@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "Airoot platform 0.9.8 &ws"
+var version string = "Airoot platform 0.9.8u &ws"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -740,7 +740,7 @@ func command(cmds []string) (bool, string) {
 				if serverList[cmds[1]] == nil {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
 				} else {
-					if serverList[cmds[1]].Close() == nil {
+					if serverList[cmds[1]].Destroy() == nil {
 						delete(serverList, cmds[1])
 						str = DevPrintln(2, lang["移除成功"], cmds[1])
 					} else {
@@ -1033,7 +1033,6 @@ func main() {
 		}
 	}
 
-	fmt.Println(">>>>>>>")
 	for exitFlag && quit != "quit" {
 		time.Sleep(1 * time.Second)
 	}

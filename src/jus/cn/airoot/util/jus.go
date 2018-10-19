@@ -23,13 +23,14 @@ type HTMLObject struct {
 
 //----------------------------------JUS-----------------------------------------
 type JUS struct {
-	resPath             string //资源生成目录（例如index.RES）
-	dirPath             string //所在目录地址
-	path                string //记录类的文件夹路径
-	htmlPath            string //html模块的绝对路径
-	jsPath              string //js模块的绝对路径
-	cssPath             string //css模块路径
-	SYSTEM_PATH         string //系统路径
+	SERVER              *JusServer //服务器引用
+	resPath             string     //资源生成目录（例如index.RES）
+	dirPath             string     //所在目录地址
+	path                string     //记录类的文件夹路径
+	htmlPath            string     //html模块的绝对路径
+	jsPath              string     //js模块的绝对路径
+	cssPath             string     //css模块路径
+	SYSTEM_PATH         string     //系统路径
 	CLASS_PATH          string
 	root                string
 	parent              *JUS

@@ -61,14 +61,13 @@ type JusServer struct {
 	Status        bool   //运行状态
 	Datetime      time.Time
 	server        *http.Server
-	fServer       http.Handler
 	fServerList   map[string]http.Handler //内部映射的路径
 	osName        string                  //操作系统名称
 	SysPath       string
 	RootPath      string
 	jusDirName    string
-	proxy         []*proxyMap        //反向代理列表
 	pattern       map[string]*urlMap //映射列表
+	attribute     map[string]string  //服务环境变量
 	useClassList  []*element
 	wsUser        *WsUser
 	connectedList []*connectElement
@@ -89,8 +88,8 @@ func (u *JusServer) CreateServer(SysPath string, rootPath string) {
 	}
 
 	u.jusDirName = "/juis/"
-	u.proxy = make([]*proxyMap, 0)
 	u.pattern = make(map[string]*urlMap, 0)
+	u.attribute = make(map[string]string, 0)
 	u.wsUser = &WsUser{list: make(map[string]*connectElement)} //初始化
 	u.connectedList = make([]*connectElement, 0)
 	u.testConnect = make(chan byte)
@@ -184,12 +183,10 @@ func (u *JusServer) SetProject(path string) bool {
 	if Exist(path) {
 		rpath, _ := filepath.Abs(path)
 		u.RootPath = rpath
-		u.fServer = http.FileServer(http.Dir(path))
+		//u.fServer = http.FileServer(http.Dir(path))
 		u.fServerList = make(map[string]http.Handler)
-		u.proxy = u.proxy[0:0]
-		for _, v := range u.GetAttrLike("proxy") {
-			u.AddDomainProxy(v[0], v[1])
-		}
+		u.fServerList[rpath] = http.FileServer(http.Dir(path))
+
 		u.pattern = make(map[string]*urlMap)
 		for _, v := range u.GetAttrLike("pattern") {
 			u.AddProxy(v[0], v[1])
@@ -197,6 +194,12 @@ func (u *JusServer) SetProject(path string) bool {
 		for _, v := range u.GetAttrLike("ws_accept") { //添加websocket用户验证url
 			fmt.Println("ws_accept", v[0])
 			u.wsURL = v[0]
+		}
+		for _, v := range u.GetAttrLike("string") { //添加项目变量
+			u.AddServerVar("string", "@"+v[0], v[1])
+		}
+		for _, v := range u.GetAttrLike("variable") { //添加项目变量
+			u.AddServerVar("variable", "@"+v[0], v[1])
 		}
 		return true
 	} else {
@@ -282,7 +285,22 @@ func (u *JusServer) CreateModule(cls string, className string) bool {
  */
 func (u *JusServer) Close() error {
 	u.Status = false
-	u.fServer = nil
+	if u.server != nil {
+		return u.server.Close()
+	}
+	for _, v := range u.connectedList {
+		v.Conn.Close()
+	}
+	u.connectedList = make([]*connectElement, 0)
+	return nil
+}
+
+/**
+ * 销毁当前服务，是在移除当前服务时候使用
+ */
+func (u *JusServer) Destroy() error {
+	u.Status = false
+	//u.fServer = nil
 	u.fServerList = nil
 	if u.server != nil {
 		return u.server.Close()
@@ -441,7 +459,7 @@ func (u *JusServer) jusEvt(w http.ResponseWriter, req *http.Request) {
 		}
 		w.Write(value)
 	} else {
-		jus := &JUS{SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/code/"}
+		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/code/"}
 		className := Substring(req.RequestURI, StringLen(u.jusDirName), LastIndex(req.RequestURI, "."))
 		className = Replace(className, "/", ".")
 		if jus.CreateFrom(u.RootPath+"/code/", "", nil, className) {
@@ -466,7 +484,7 @@ func (u *JusServer) jusEditEvt(w http.ResponseWriter, req *http.Request) {
 	if Exist(path) {
 		u.root(w, req)
 	} else {
-		jus := &JUS{SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/code/"}
+		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/code/"}
 		className := Substring(req.RequestURI, StringLen("index.edit/"+u.jusDirName), LastIndex(req.RequestURI, "."))
 		if jus.CreateFrom(u.SysPath+"/code/", "", nil, className) {
 			jus.resPath = "code"
@@ -534,7 +552,7 @@ func (u *JusServer) root(w http.ResponseWriter, req *http.Request) {
 		w.Header().Add("Content-Type", "text/css; charset=utf-8")
 	}
 	//w.Header().Add("ETag", "1")
-	u.fServer.ServeHTTP(w, req)
+	u.fServerList[u.RootPath].ServeHTTP(w, req)
 
 }
 
@@ -1025,7 +1043,7 @@ func (u *JusServer) apiEvt(req *http.Request) string {
 			return ""
 		}
 	case "module":
-		jus := &JUS{SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/code/"}
+		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/code/"}
 		className := Substring(req.RequestURI, StringLen(u.jusDirName), LastIndex(req.RequestURI, "."))
 		className = Replace(className, "/", ".")
 		if jus.CreateFromString(u.RootPath+"/code/", "", nil, req.FormValue("value"), className) {
@@ -1171,7 +1189,7 @@ func (u *JusServer) WalkFiles(src string, dest string) {
 				fileType = Substring(aPath, LastIndex(aPath, "."), -1)
 				if fileType == ".html" || fileType == ".js" || fileType == ".css" { //2018-5-4
 					d, _ := os.Create(aPath)
-					d.Write(relEvt(u.SysPath, u.RootPath, u.jusDirName, dPath))
+					d.Write(relEvt(u, u.SysPath, u.RootPath, u.jusDirName, dPath))
 					defer d.Close()
 				} else {
 					CopyFile(aPath, f)
@@ -1183,8 +1201,8 @@ func (u *JusServer) WalkFiles(src string, dest string) {
 		})
 }
 
-func relEvt(sysPath string, rootPath string, jusDirName string, path string) []byte {
-	jus := &JUS{SYSTEM_PATH: sysPath, CLASS_PATH: sysPath + "/code/"}
+func relEvt(server *JusServer, sysPath string, rootPath string, jusDirName string, path string) []byte {
+	jus := &JUS{SERVER: server, SYSTEM_PATH: sysPath, CLASS_PATH: sysPath + "/code/"}
 	lp := LastIndex(path, ".")
 	className := Substring(path, 0, lp)
 	fmt.Println("export:", className)
@@ -1252,24 +1270,6 @@ func (u *JusServer) GetData() [][]string {
 }
 
 /**
- * 增加域名级别虚拟目录和反向代理
- */
-func (u *JusServer) AddDomainProxy(pattern string, path string) {
-	fmt.Println("proxy", pattern, "-->", path)
-	cls := 0
-	if Index(path, "http://") == 0 {
-		cls = 1
-	}
-	proxyURL, err := url.Parse(pattern)
-	if err == nil {
-		u.proxy = append(u.proxy, &proxyMap{proxyURL, path, cls})
-	} else {
-		fmt.Println("Format URL:", pattern)
-	}
-
-}
-
-/**
  * 增加虚拟目录和反向代理
  */
 func (u *JusServer) AddProxy(pattern string, path string) {
@@ -1287,6 +1287,28 @@ func (u *JusServer) AddProxy(pattern string, path string) {
 
 	}
 	u.pattern[pattern] = &urlMap{pattern, path, cls}
+}
+
+/**
+ * 添加服务器环境变量
+ */
+func (u *JusServer) AddServerVar(cls string, key string, value string) {
+
+	switch cls {
+	case "string":
+		u.attribute[key] = "\"" + value + "\""
+		fmt.Println(cls, key, "=", "\""+value+"\"")
+		break
+	case "variable":
+		u.attribute[key] = value
+		fmt.Println(cls, key, "=", value)
+		break
+	}
+
+}
+
+func (u *JusServer) GetServerVar(key string) string {
+	return u.attribute[key]
 }
 
 /**
