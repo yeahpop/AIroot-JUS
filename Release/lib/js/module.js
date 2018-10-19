@@ -601,7 +601,7 @@
 				_MODULE_CONTENT_TEMP_.style = "position:fixed;left:10000px;top:10000px;";
 				document.body.appendChild(_MODULE_CONTENT_TEMP_);
 			}
-			_MODULE_CONTENT_TEMP_.append(tmp);
+			_MODULE_CONTENT_TEMP_.appendChild(tmp);
 		}
 		
 	}
