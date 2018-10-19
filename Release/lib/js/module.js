@@ -451,6 +451,7 @@
 							_MODULE_CONTENT_LIST_[__APPDOMAIN__][v.module] = eval("(" + v.value.substr(1) + ")");
 							__FORMAT__(v.value.substr(1),uuid,__APPDOMAIN__,module);
 						}else if(v.value.charAt(0) == "P"){//Package 引入外部包
+							console.log({url:v.value.substr(1)});
 							var isImport = false;
 							var importStr = v.value.substr(1);
 							for(var n = 0;n<__PACKAGE_LIST__.length;n++){
@@ -576,7 +577,7 @@
 				var clearFunc = "";
 				var qtLst = target.querySelectorAll("div[onRemove]");
 				for(var i = 0;i<qtLst.length;i++){
-					clearFunc += this.getAttribute("onRemove") + ";\r\n";
+					clearFunc += qtLst[i].getAttribute("onRemove") + ";\r\n";
 				}
 				if(clearFunc != ""){
 					(new Function(clearFunc))();
@@ -600,7 +601,7 @@
 				_MODULE_CONTENT_TEMP_.style = "position:fixed;left:10000px;top:10000px;";
 				document.body.appendChild(_MODULE_CONTENT_TEMP_);
 			}
-			_MODULE_CONTENT_TEMP_.appendChild(tmp);
+			_MODULE_CONTENT_TEMP_.append(tmp);
 		}
 		
 	}
@@ -730,7 +731,6 @@
 		load(url,function(e){
 			__APPDOMAIN__ = __APPDOMAIN__ || "local";
 			var data = e.target.data;
-			//var w = __INIT__(__UUID__(),module,data,value,__APPDOMAIN__,target);
 			var uuid = __UUID__();
 			__FORMAT__(data,uuid,__APPDOMAIN__,module);
 			__LOAD_PACKAGE__(function(){
