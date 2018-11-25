@@ -1,0 +1,37 @@
+<!-- 
+	类注释
+	@author sunxy
+	@version 0.0
+ -->
+<@import value="component.*" />
+<desktop>
+	<style>
+		body{
+          	padding:10px;
+			text-align:center;
+          	
+		}
+      	.content{
+        	background-color:#abcdef;  
+      	}
+      	.login{
+        	color:#f0f0f0;
+          	font-size:64px;
+          	font-weight:bold;
+      	}
+      
+	</style>
+	<screen id="scr" />
+  	<keyborad id="kb" />
+	<script>
+		import Arm;
+		function init(){
+			var cpu = new Arm();
+			cpu.screenHandle = scr;
+			kb.onClick = function(e){
+				console.log("键盘点击字符：" + e);
+				cpu.push(e);
+			}
+		}
+	</script>
+</desktop>
