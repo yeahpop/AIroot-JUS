@@ -147,7 +147,7 @@ func (m *MScript) ReadFromString(js string) {
 	m.domainList = make(map[string]*TagSet, 10)
 
 	//00装入关键字
-	keyWord := [...]string{"public", "private", "super", "var", "let", "function", "if", "else", "switch", "case", "while", "for", "in", "do", "static", "import", "new", "include", "return", "class", "extends", "interface", "this", "@this", "@res", "set", "get", "try", "catch", "finally"}
+	keyWord := [...]string{"public", "private", "super", "var", "let", "function", "func", "if", "else", "switch", "case", "while", "for", "in", "do", "static", "import", "new", "include", "return", "class", "extends", "interface", "this", "@this", "@res", "set", "get", "try", "catch", "finally"}
 	m.kMap = make(map[string]bool, 10)
 	for _, v := range keyWord {
 		m.kMap[v] = true
@@ -669,8 +669,8 @@ func (m *MScript) readArea(i int, domain string, paramType int) int {
 		}
 
 		if p.IsKeyWord {
-			if "public" == p.Value {
-				m.tag.IsPublic = true
+			if "private" == p.Value {
+				m.tag.IsPublic = false
 			} else if "class" == p.Value {
 				m.tag.IsClass = true
 				i = m.classMethod(i, domain, paramType)
@@ -700,7 +700,18 @@ func (m *MScript) readArea(i int, domain string, paramType int) int {
 			} else if "function" == p.Value {
 				m.tag.IsFunction = true
 				i = m.funcMethod(i, domain, m.tag, paramType)
-			} else {
+			} else if "func" == p.Value {
+				p.Value = "function"
+				m.tag.IsFunction = true
+				i = m.funcMethod(i, domain, m.tag, paramType)
+			} else if "set" == p.Value {
+				m.tag.IsFunction = true
+				m.tag.IsSet = true
+				i = m.funcMethod(i, domain, m.tag, paramType)
+			} else if "get" == p.Value {
+				m.tag.IsFunction = true
+				m.tag.IsGet = true
+				i = m.funcMethod(i, domain, m.tag, paramType)
 			}
 			continue
 		}
@@ -715,7 +726,7 @@ func (m *MScript) clearTag() {
 	m.tag.IsStatic = false
 	m.tag.IsSet = false
 	m.tag.IsGet = false
-	m.tag.IsPublic = false
+	m.tag.IsPublic = true
 	m.tag.IsClass = false
 }
 

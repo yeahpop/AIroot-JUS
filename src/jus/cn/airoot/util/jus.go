@@ -654,8 +654,10 @@ func (j *JUS) styleFormat() string {
  * 公共css属性，也可以认为某个控件的全局css样式
  */
 func (j *JUS) cssFormat() string {
-	j.css.AddDomain("[class_id='" + j.className + "']")
-	j.css.ReplaceSelecter("body", "[class_id='"+j.className+"']")
+	//j.css.AddDomain("[class_id='" + j.className + "']")
+	//j.css.ReplaceSelecter("body", "[class_id='"+j.className+"']")
+	j.css.AddDomain(".-" + Replace(j.className, ".", "-"))
+	j.css.ReplaceSelecter("body", ".-"+Replace(j.className, ".", "-"))
 	return ScriptInitD(j.css.ToString(0), j.domain)
 
 }
@@ -1073,6 +1075,7 @@ func (j *JUS) ReadHTML() *HTML {
 	j.rootHTML()
 	j.importHTML()
 	j.initObj(j.html)
+
 	j.includeCode([]*HTML{j.html})
 	htmls := j.html.GetUnTextChild()
 	if len(htmls) == 1 {
@@ -1097,15 +1100,21 @@ func (j *JUS) ReadHTML() *HTML {
 	j.html.SetAttr("isComponent", "true")
 	j.html.SetAttr("id", j.domain)
 	j.html.SetAttr("isroot", "true")
-
+	headCss := ""
+	if Index(j.html.TagName(), ".") == -1 {
+		headCss = Replace(j.className, ".", "-")
+	} else {
+		headCss = Replace(j.html.TagName(), ".", "-")
+	}
+	headCss = "-" + headCss
 	j.scanHTML([]*HTML{j.html})
 	j.componentId([]*HTML{j.html})
 	if j.contentTo != "" {
 		j.scriptBuffer.WriteString("____." + j.contentTo + "=_MODULE_INNER_[__DOMAIN__];")
 	}
-
+	j.html.SetAttr("class", headCss+" "+j.html.GetAttr("class"))
 	if j.html.GetAttr("class") == "" || Index(j.html.GetAttr("class"), j.domain) == -1 {
-		j.html.SetAttr("class", j.domain+IfStr(j.html.GetAttr("class") != "", " "+j.html.GetAttr("class"), " "))
+		j.html.SetAttr("class", IfStr(j.html.GetAttr("class") != "", j.html.GetAttr("class")+" ", "")+j.domain)
 	}
 	if j.style != nil {
 		style := &HTML{}
