@@ -1,0 +1,22 @@
+<style>
+	body{
+		padding:10px;
+		text-align:center;
+		
+	}
+	
+  
+</style>
+<div class="content" width="100%" height="100%">
+	<span>{name = "Hello World!"}</span>
+</div>
+
+<script>
+	var _tpl = new util.Template(dom);
+	public get tpl(){
+		return _tpl.dataContext;
+	}
+	public set tpl(value){
+		_tpl.dataContext = value;
+	}
+</script>

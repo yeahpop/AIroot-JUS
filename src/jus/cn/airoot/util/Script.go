@@ -27,6 +27,7 @@ type Script struct {
 	root         string
 	hMap         map[string]*Attr //导入的类文件
 	eMap         []string         //集成的类文件
+	iMap         []string         //接口文件
 	gsMap        map[string]*GSetter
 	domain       string
 	value        *Attr
@@ -75,6 +76,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 	var param *Tag = nil
 	level := 0
 	var isExtends bool = false
+	var isImpl bool = false
 
 	//00.将import 的类记录下来
 	for p < len(lst) {
@@ -136,8 +138,16 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 					isExtends = true
 					continue
 				}
-				if t.TagType == 0 {
+				if isImpl == false && t.IsKeyWord && t.Value == "implements" {
+					isExtends = false
+					isImpl = true
+					continue
+				}
+				if isExtends && t.TagType == 0 {
 					s.eMap = append(s.eMap, t.Value)
+				}
+				if isImpl && t.TagType == 0 {
+					s.iMap = append(s.iMap, t.Value)
 				}
 			}
 			isExtends = false

@@ -62,7 +62,7 @@ func (p *HTML) init() {
 		ch = code[position]
 		position++
 
-		if ch == '(' || ch == ')' || ch == '{' || ch == '}' || ch == '[' || ch == ']' || ch == ',' || ch == ':' {
+		if ch == '(' || ch == ')' || ch == '{' || ch == '}' || ch == '[' || ch == ']' || ch == ',' { //|| ch == ':'
 			if len(tmp) > 0 {
 				lst = append(lst, &Ch{string(tmp), 0})
 				tmp = tmp[0:0]
@@ -377,7 +377,7 @@ m:
 			}
 
 		}
-		
+
 	}
 
 	//变换为HTML

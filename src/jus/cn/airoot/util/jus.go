@@ -165,8 +165,8 @@ func (j *JUS) CreateFrom(root string, domain string, node *HTML, className strin
 		}
 		j.html.ReadFromString(t) //j.html.ReadFromString(j.scanMedia(t))
 	} else if j.jsPath != "" {
-		j.PushImportScript(&Attr{className, ""}) //change by sunxy 2018-3-2
 		j.scriptFile = true
+		j.PushImportScript(&Attr{className, ""}) //change by sunxy 2018-3-2
 	} else {
 		return false
 
@@ -972,7 +972,20 @@ func (j *JUS) testHTML() *HTML {
 
 func (j *JUS) ReadHTML() *HTML {
 	if j.scriptFile {
+
 		tHTML := &HTML{}
+		//
+		if j.parent == nil {
+			sb := bytes.NewBufferString("<script>")
+			for _, v := range j.scriptElementBuffer {
+				sb.WriteString(v)
+			}
+			sb.WriteString("</script>")
+			tHTML.ReadFromString(sb.String())
+
+			return tHTML
+		}
+
 		tps := bytes.NewBufferString("")
 		if j.paramValue != nil && j.paramValue.Value != "" {
 			tps.WriteString(j.paramValue.Value)
@@ -1097,7 +1110,7 @@ func (j *JUS) ReadHTML() *HTML {
 		j.style.ReadFromString(j.scanMedia(j.styleBuffer.String()))
 	}
 
-	j.html.SetAttr("isComponent", "true")
+	//j.html.SetAttr("isComponent", "true")
 	j.html.SetAttr("id", j.domain)
 	j.html.SetAttr("isroot", "true")
 	headCss := ""
@@ -1380,7 +1393,12 @@ func (j *JUS) ToFormatBytes() []byte {
 		v.Remove()
 	}
 	//json.Write(j.contentToInitBuf.Bytes())
-	j.ToFormatLine("H", j.className, result.ToString(), json)
+	if j.IsScript() {
+		//j.ToFormatLine("I", j.className, result.ToString(), json)
+	} else {
+		j.ToFormatLine("H", j.className, result.ToString(), json)
+	}
+
 	for _, v := range j.runList {
 		j.ToFormatRun("R"+v.Type, v.Name, v.Value, json)
 	}

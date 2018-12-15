@@ -473,7 +473,6 @@ func (u *JusServer) jusEvt(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("<h1>404</h1>"))
 		}
 		jus = nil
-
 	}
 
 }
