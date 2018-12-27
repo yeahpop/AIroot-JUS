@@ -16,6 +16,10 @@ class Template{
 	
 	
 	function init(node:HTML){
+		if(!(node instanceof HTMLElement)){
+			node = node.dom;
+		}
+		defer(node,@this);
 		read(this.node = node);
 		initListener();
 	}
@@ -64,8 +68,11 @@ class Template{
 	 */
 	public function set dataContext(value:Object){
 		if(typeof value == "object"){
-			_pdata = value;
-			__TPL_MAP_PUSH__({value:value,target:_data,domain:@this});
+			if(_pdata != value){
+				__TPL_MAP_PUSH__(value,{target:_data,domain:@this});
+				_pdata = value;
+			}
+			
 			var p = null;
 			for(var i in _data){
 				p = value[i]
@@ -293,7 +300,6 @@ class Template{
 	}
 	
 	private function readString(index,value){
-		console.log("readString",index,value);
 		var p = null;
 		var c = value.charAt(index);
 		var str = c;
@@ -330,12 +336,16 @@ class Template{
 	private function setAttribute(obj,name,info){
 		var index = info.arr;
 		var _value = null;
-		
+		var V = null;
 		Object.defineProperty(obj,name,{
 			set:function(value){
 				var tValue = _value;
 				if(_value && typeof value == "object"){
-					tplMap.push({value:value,target:_value,domain:@this});
+					if(V != value){
+						__TPL_MAP_REMOVE__(V,_value);
+						__TPL_MAP_PUSH__(value,{target:_value,domain:@this});
+						V = value;
+					}
 					for(var k in _value){
 						_value[k] = value[k];
 					}
@@ -356,7 +366,6 @@ class Template{
 							notify(index,value,tValue);
 							p[name] = value;
 						}
-						
 						update(p);
 						
 					}

@@ -65,6 +65,7 @@ type JusServer struct {
 	osName        string                  //操作系统名称
 	SysPath       string
 	RootPath      string
+	SrcPath       string
 	jusDirName    string
 	pattern       map[string]*urlMap //映射列表
 	attribute     map[string]string  //服务环境变量
@@ -80,9 +81,10 @@ type JusServer struct {
  * @param rootPath	工程类路径
  * 启动函数
  */
-func (u *JusServer) CreateServer(SysPath string, rootPath string) {
+func (u *JusServer) CreateServer(SysPath string, rootPath string, srcPath string) {
 	u.Datetime = time.Now()
 	u.SysPath = SysPath
+	u.SrcPath = srcPath
 	if rootPath != "" {
 		u.SetProject(rootPath)
 	}
@@ -459,11 +461,11 @@ func (u *JusServer) jusEvt(w http.ResponseWriter, req *http.Request) {
 		}
 		w.Write(value)
 	} else {
-		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/code/"}
+		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + u.SrcPath + "/"}
 		className := Substring(req.RequestURI, StringLen(u.jusDirName), LastIndex(req.RequestURI, "."))
 		className = Replace(className, "/", ".")
-		if jus.CreateFrom(u.RootPath+"/code/", "", nil, className) {
-			jus.resPath = "code"
+		if jus.CreateFrom(u.RootPath+u.SrcPath+"/", "", nil, className) {
+			jus.resPath = u.SrcPath
 			b := jus.ToFormatBytes()
 			w.Header().Add("Content-Length", strconv.Itoa(len(b)))
 			w.Write(b)
@@ -1045,7 +1047,7 @@ func (u *JusServer) apiEvt(req *http.Request) string {
 		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/code/"}
 		className := Substring(req.RequestURI, StringLen(u.jusDirName), LastIndex(req.RequestURI, "."))
 		className = Replace(className, "/", ".")
-		if jus.CreateFromString(u.RootPath+"/code/", "", nil, req.FormValue("value"), className) {
+		if jus.CreateFromString(u.RootPath+"/code/", "", nil, req.FormValue("value"), className, nil) {
 			jus.resPath = "code"
 			return jus.ToFormatString()
 		} else {

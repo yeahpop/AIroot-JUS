@@ -1,0 +1,26 @@
+<!-- 页面 -->
+<css>
+	body{
+		position:absolute;
+		padding-top:12px;
+		transition:top .5s ease,opacity .5s ease;
+		top:100%;
+		opacity:0;
+		width:100%;
+		background-color:#ffffff;
+		color:#545454;
+	}
+</css>
+<div>
+	<@content/>
+</div>
+<script>
+	function init(){
+		setTimeout(function(){dom.style.top = "0px";dom.style.opacity = "1";},0);
+	}
+	
+	function close(){
+		setTimeout(function(){dom.style.top = "-100%";dom.style.opacity = "0";},0);
+		setTimeout(function(){$(dom).remove()},500);
+	}
+</script>

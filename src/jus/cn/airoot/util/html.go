@@ -528,7 +528,9 @@ func (h *HTML) Remove() {
 
 //通过标签名删除
 func (h *HTML) RemoveChildByTagName(tagName string) {
-	for i, v := range h.list {
+	var v *HTML
+	for i := len(h.list) - 1; i >= 0; i-- {
+		v = h.list[i]
 		if v.TagName() == tagName {
 			h.list = deleteHTML(h.list, i)
 		}

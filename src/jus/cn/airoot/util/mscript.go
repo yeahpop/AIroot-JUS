@@ -219,7 +219,7 @@ func (m *MScript) ReadFromString(js string) {
 			m.position--
 			var tXML *HTML = nil
 			tXML, m.position = (&HTML{}).ReadOneBlock(m.code, m.position)
-			tp = &Tag{Value: ListToHTMLString(tXML.At(0).Child()), TagType: 12} //XML对象
+			tp = &Tag{Value: tXML.At(0).ToString(), TagType: 12} //XML对象
 			m.lst = append(m.lst, tp)
 			continue
 		}
@@ -1146,7 +1146,7 @@ func (m *MScript) ToECSMAScript5() string {
 }
 
 /**
- * 整理函数中的参数默认复制
+ * 整理函数中的参数默认赋值
  * @param lst
  * @param out
  */
@@ -1171,8 +1171,8 @@ func (m *MScript) initFuncParam(lst []*Tag, out *[]*Tag) {
 			t.SetAttr(5, true)
 			mainLst = append(mainLst, t)
 
-			t = &Tag{Value: "var", TagType: 0}
-			t.SetAttr(1, true).SetDomain("class")
+			t = &Tag{Value: "var", TagType: 0, IsVar: true, IsKeyWord: true}
+			//t.SetAttr(1, true).SetDomain("class")
 			defLst = append(defLst, t)
 			defLst = append(defLst, &Tag{Value: " ", TagType: -1})
 

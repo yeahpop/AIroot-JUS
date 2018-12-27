@@ -3,7 +3,7 @@
  * @email	uucckk@163.com
  * @version 0.9.1
  * http://www.airoot.cn/
- * @modify date '2018-11-28';
+ * @modify date '2018-12-18';
  */
 
 "use strict";
@@ -81,24 +81,6 @@ function trace(){
 	alert(value);
 }
 
-//全局变量
-var browser = null;
-/**
- * 初始化AsJs环境
- */
-(function(){
-	if (/msie/i.test(navigator.userAgent)){ 
-		browser = "ie5+"
-	}else{
-		browser = "other";
-	}
-
-})(); 
-
-
-
-
-
 /**
  * asjs API 封装包
  */
@@ -160,9 +142,6 @@ var asjs = new function(){
             return;
         }
        
-        /* debug:
-        $('msg').innerHTML += '&nbsp;&nbsp;&nbsp;&nbsp;'+jscolorizer.showTimes().replace(/\n$/, '').replace(/\n/g, '<br>&nbsp;&nbsp;&nbsp;&nbsp;')+'<br>';
-        */
         code = new String(code);
         code = code.replace(/(\r\n|\r|\n)/g, "<br>\n");
         code = code.replace(/<font\s+/gi, '<font@@@@@');
@@ -398,26 +377,6 @@ var asjs = new function(){
 	this.post = this.load;
 	
 	
-	/**
-	 * 判断模块对象是否存在
-	 * @param module	模块内容,名字用String
-	 */
-	this.exist = function(module){
-		if(window.$$[module]){
-			if(window.document.getElementById(window.$$[module].label) == undefined){
-				return false;
-			}
-			if(window.$$[module].time){
-				return false;
-			}
-			return true;
-		}
-		return false;
-	}
-	
-	
-	
-	
 
 }();
 
@@ -431,251 +390,6 @@ var asjs = new function(){
 
 
 
-
-/**
- * 将字符串数据进行整理,变成XML的可读类
- */
-function XML(data){
-	var _root = this;
-	var xml = null;
-	var arr = new Array();
-	var btype 
-	if(data != null){
-		if(data instanceof Array){
-			arr = data;
-		}else{
-			switch(browser){
-				case "ie5+" : 
-  					xml = new ActiveXObject("Microsoft.XMLDOM"); 
-   					xml.loadXML(data);
-					xml  = xml.childNodes;
-				break;
-				case "other" ://FireFox2.0、Safari2.0 
-  					xml = (new DOMParser()).parseFromString(data, "text/xml").childNodes; 
-				break;
-				default :
-				alert(browser);
- 			} 
-			for(var n = 0;n<xml.length;n++){
-				arr.push(xml[n]);
-			}
-		}
-	}
-	
-	
-	
-	
-	/**
-	 * 获取元素的属性
-	 * @param name	属性名称
-	 * @param value	属性值，可以不填写
-	 */
-	this.qname = function(name,value){//setAttribute,getAttribute
-		if(!name){
-			return arr[0].attributes;
-		}
-		var outStr = "";
-		for(var i = 0;i<arr.length;i++){
-			if(value != null){
-				arr[i].setAttribute(name,value);
-			}
-			outStr += arr[i].getAttribute(name) + ",";
-		}
-		return outStr.substr(0,outStr.length - 1);
-	}
-	
-	
-	
-	
-	/**
-	 * 长度
-	 */
-	this.length = function (){
-		return arr.length;
-	}
-	
-	
-	/**
-	 * 查找节点内容
-	 */
-	this.child = function (nodeName){
-		
-		if(nodeName && nodeName.charAt(0) == '@'){
-			return this.qname(nodeName.substring(1));
-		}else if(nodeName && nodeName.charAt(0) == '['){
-			nodeName = nodeName.substr(1,nodeName.length - 2);
-			var values = nodeName.split(".");
-			var p = this.child(values[0]);
-			var t = null;
-			for(var n = 1;n<values.length;n++){
-				t = values[n]; 
-				if(t.charAt(t.length - 1) == ')'){
-					p = p.at(t.substring(3,t.length - 1));
-					continue;
-				}
-				p = p.child(t);
-			}
-			return p;
-		}
-		var a = new Array();
-		var ch = null;
-		for(var i = 0;i<arr.length;i++){
-			ch = arr[i].childNodes;
-			for(var j = 0;j<ch.length;j++){
-				if(nodeName == null || ch[j].nodeName == nodeName){
-					a.push(ch[j]);
-				}
-			}
-		}
-		return new XML(a);
-	}
-	
-	
-	/**
-	 * 制定具体位置
-	 */
-	this.at = function (pos){
-		var a = new Array();
-		a.push(arr[pos]);
-		return new XML(a);
-	}
-	
-	/**
-	 * 节点赋值
-	 */
-	this.node = function(value){
-		if(value){
-			for(var i = 0;i<arr.length;i++){
-				if(typeof(value) == "string"){
-					arr[i].parentNode.replaceChild(new XML(value)._nodeValue(0),arr[i]);
-				}
-				
-			}
-		}
-	}
-	
-	this._nodeValue = function(p){
-		return arr[p];
-	}
-	
-	/**
-	 * 获取XML格式内容
-	 */
-	this.toXMLString = function(){
-		var outStr = "";
-		var i = 0;
-		switch(browser){
-			case "ie5+":
-				for(i = 0;i<arr.length;i++){
-					outStr += arr[i].xml;
-				}
-			break;
-			case "other" :
-				for(i = 0;i<arr.length;i++){
-					outStr += (new XMLSerializer()).serializeToString(arr[i]); 
-				}
-			break;
-		}
-		
-		return outStr;
-	}
-	
-	/**
-	 * 获取JSON数据
-	 */
-	this.toJSON = function(){
-		var obj = {};
-		var arr = null;
-		for(var i = 0;i<this.length();i++){
-			arr = this.at(i).child('@');
-			for(var j = 0;j<arr.length;j++){
-				obj[arr[j].name] = arr[j].value;
-			}
-		}
-		return obj;
-	};
-	
-	/**
-	 * 获取JSON数组
-	 */
-	this.toJSONArray = function(){
-		var list = [];
-		var obj = null;
-		var arr = null;
-		for(var i = 0;i<this.length();i++){
-			arr = this.at(i).child('@');
-			obj = {};
-			for(var j = 0;j<arr.length;j++){
-				obj["@"+arr[j].name] = arr[j].value;
-			}
-			var child = this.at(i).child();
-			for(j = 0;j<child.length();j++){
-				obj[child.at(j).getName()] = child.at(j).toString();
-			}
-			
-			list.push(obj);
-		}
-		return list;
-		
-	};
-	
-	this.appendChild = function (data){
-		var child = new XML("<response>" + data + "</response>").child();
-		var len = child.length();
-		if(arr.length == 1){
-			for(var i = 0;i<len;i++){
-				arr[0].appendChild(child._nodeValue(i));
-			}
-		}
-	}
-	
-	/**
-	 * 删除指定元素
-	 * @param nodeName
-	 * @return
-	 */
-	this.removeChild = function(nodeName){
-		var len = 0;
-		
-		var pos = null;
-		var child = null;
-		
-		for(var i = 0;i<arr.length;i++){
-			pos = arr[i];
-			if(nodeName instanceof XML){
-				child = nodeName;
-			}else{
-				child = new XML([arr[i]]).child(nodeName);
-			}
-			
-			len = child.length();
-			for(var j = 0;j<len;j++){
-				pos.removeChild(child._nodeValue(j));
-			}
-		}
-	}
-	
-	
-	this.getName = function(){
-		return arr.length>0 ? arr[0].nodeName : null;
-	}
-	
-	
-	
-	/**
-	 * 重写toString方法
-	 */
-	this.toString = function(){
-		var outStr = "";
-		for(var i = 0;i<arr.length;i++){
-			if(arr[i].childNodes.length != 0){
-				outStr += arr[i].childNodes[0].wholeText;
-			}
-		}
-		return outStr;
-	}
-	
-}//XML
 
 var URLRequestMethod = {GET:"get",POST:"post"};
 var Event = {COMPLETE:"complete"};
@@ -1215,12 +929,12 @@ function URLLoader(id){
 	 * 将数据分析
 	 * @return 返回模块数据列表
 	 */
-	var __FORMAT__ = function(data,__APPDOMAIN__,module){
+	var __FORMAT__ = function(__DATA__,__APPDOMAIN__,module){
 		if(!_MODULE_CONTENT_LIST_[__APPDOMAIN__]){
 			_MODULE_CONTENT_LIST_[__APPDOMAIN__] = {};
 		}
 		var list = [];
-		var p = data;
+		var p = __DATA__;
 		var t = null;
 		var v = null;
 		var html = null;
@@ -1348,6 +1062,7 @@ function URLLoader(id){
 		}
 		
 		if(uuid){
+			s.setAttribute("id","stl_" + uuid);
 			value = value.replace(/[\b]/g,uuid);
 		}
 		s.innerHTML = value;
@@ -1367,13 +1082,7 @@ function URLLoader(id){
 		__C__.innerHTML = data;	
 		var tmp = __C__.firstChild;
 		if(style){
-			if(tmp.firstChild){
-				tmp.insertBefore(__InitCSS__(null,style,uuid),tmp.firstChild)
-			}else{
-				__C__.appendChild(__InitCSS__(null,style,uuid));
-				tmp = __C__;
-			}
-			
+			document.head.appendChild(__InitCSS__(null,style,uuid));
 		}
 		if(target.toString().toLowerCase() != "[object window]"){
 			target = target.length ? target[0] :target;
@@ -1440,7 +1149,7 @@ function URLLoader(id){
 		var module = param[1];
 		var tgt = window[param[2].replace(/[\b]/g,uuid)];
 		var value = param.length>3 ? param[3] : null;
-		__PUSH_COMMAND__(uuid,data.name.replace(/[\b]/g,uuid),cls,getModule(module,__APPDOMAIN__)({target:tgt,data:value}));
+		__PUSH_COMMAND__(uuid,data.name.replace(/[\b]/g,uuid),cls,getModule(module,__APPDOMAIN__)(tgt,value));
 		
 	}
 
@@ -1518,7 +1227,6 @@ function URLLoader(id){
 	
 
 	//设置HTMLElement
-	var ____F = HTMLElement.prototype.append;
 	var ____D = HTMLElement.prototype.appendChild;
 	//var ____I = HTMLElement.prototype.innerHTML;
 	HTMLElement.prototype.append = HTMLElement.prototype.appendChild = function(obj){
@@ -1530,7 +1238,6 @@ function URLLoader(id){
 	};
 	
 	//设置DocumentFragment
-	var ____FG = DocumentFragment.prototype.append;
 	var ____DG = DocumentFragment.prototype.appendChild;
 	DocumentFragment.prototype.append = DocumentFragment.prototype.appendChild = function(obj){
 		if(obj instanceof Node){
@@ -1763,39 +1470,62 @@ function URLLoader(id){
 		}
 		
 	}
-	
-	var tplMap = [];
+	var _CCC_ = 0;
+	window.tplMap = new Map();
 	//单项保定更新数据界面
-	window.update = function update(obj,name,value){
-		if(arguments.length>2){
-			obj[name] = value;
-		}
-		var p = null;
-		for(var i = 0;i<tplMap.length;i++){
-			p = tplMap[i];
-			if(p.enabled != 0 && obj == p.value){
-				if(name){
-					p.target[name] = obj[name];
-				}else{
-					for(var k in obj){
-						p.target[k] = obj[k];
-						update(obj[k]);
-					}
+	window.update = function update(obj,name,value){		
+		var a = tplMap.get(obj);
+		if(a){
+			var t = null;
+			for(var i = 0;i<a.length;i++){
+				t = a[i].target;
+				for(var k in t){
+					t[k] = obj[k];
 				}
 			}
 		}
+		
+		for(var o in obj){
+			t = obj[o];
+			if(t instanceof Object){
+				update(t);
+			}
+		}
 	}
+	
 	//添加新元素
-	function __TPL_MAP_PUSH__(value){
+	function __TPL_MAP_PUSH__(value,obj){
+		var q = tplMap.get(value);
+		if(!q){
+			tplMap.set(value,q = []);
+		}
 		var p = null;
-		for(var i = 0;i<tplMap.length;i++){
-			p = tplMap[i];
-			if(!p.domain){
-				p = value;
+		for(var i = 0;i<q.length;i++){
+			p = q[i];
+			if(p.eb == false){
+				q[i] = obj;
 				return;
 			}
 		}
-		tplMap.push(value);
+		q.push(obj);
+	}
+	
+	
+	/**
+	 * 模板移动
+	 */
+	function __TPL_MAP_REMOVE__(value,target){
+		var q = tplMap.get(value);
+		if(q){
+			var p = null;
+			for(var i = 0;i<q.length;i++){
+				p = q[i];
+				if(p.target == target){
+					q.splice(i,1);
+					i--;
+				}
+			}
+		}
 	}
 	
 
@@ -1819,7 +1549,53 @@ function URLLoader(id){
 		__MODULE_COMMAND_LIST__[domain].push(obj);
 	}
 
-
+	/**
+	 * 注册属性，当垃圾回收器回收的是会主动回收此类对象
+	 */
+	var __DEFER_LIST_START_ = null;
+	var __DEFER_LIST_END_ = null;
+	var defer = function(dom,obj){
+		if(obj && obj.destroy){
+			if(__DEFER_LIST_END_ == null){
+				__DEFER_LIST_START_ = __DEFER_LIST_END_ = {dom:dom,lst:[obj],next:null};
+			}else{
+				__DEFER_LIST_END_.next = {dom:dom,lst:[obj],next:null};
+				__DEFER_LIST_END_ = __DEFER_LIST_END_.next;
+			}
+		}else{
+			console.error("defer error.");
+		}
+	};
+	var gcDefer = function(){
+		var c = __DEFER_LIST_START_;
+		var p = __DEFER_LIST_START_;
+		var l = null;
+		var n = null;
+		while(p){
+			//console.log(p);
+			n = p.next;
+			if(!p.dom.parentNode){
+				
+				p.dom = null;
+				p.lst = null;
+				p.next = null;
+				delete p.dom;
+				delete p.lst;
+				delete p.next;
+				if(p == __DEFER_LIST_START_){
+					__DEFER_LIST_START_ = n;
+				}else{
+					c.next = n;
+				}
+			}else{						
+				c = p;
+			}
+			p = n;
+		}
+		p = null;
+		l = null;
+	}
+	
 	/**
 	 * 垃圾回收
 	 */
@@ -1855,6 +1631,7 @@ function URLLoader(id){
 					
 					delete __MODULE_COMMAND_LIST__[name];
 					delete _MODULE_CONTENT_LIST_ATTR_[name];
+					document.head.removeChild(document.getElementById("stl_" + name));
 					if(window.__DEBUG__ && console){
 						console.log("remove model id:" + name);
 					}
@@ -1864,6 +1641,7 @@ function URLLoader(id){
 				
 			}
 		}
+		gcDefer();
 		clearTimeout(__CLEAR_ID__);
 		__CLEAR_ID__ = setTimeout(__CLEAR_FUNC__,5000);
 	}
@@ -1877,8 +1655,8 @@ function URLLoader(id){
 		
 	}
 	__CLEAR_ID__ = setTimeout(__CLEAR_FUNC__,5000);
-	window.__MODULE_METHOD__ = __MODULE_METHOD__;
-	window._MODULE_CONTENT_LIST_ = _MODULE_CONTENT_LIST_;
-	window.__WINDOW__ = __WINDOW__;
+	window.Eval = function(value){
+		console.log(eval(value));
+	}
 	window.JUS = JUS;
 })();

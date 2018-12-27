@@ -1,0 +1,31 @@
+<div>
+	<h1>{title}</h1>
+	<div>{key.userName}：{userName}</div>
+	<div>{lang.label = "中文"}</div>
+	<div>{lang.label = "英文"}</div>
+	<div>{lang.label = "法文"}</div>
+</div>
+<script>
+	import tools.Tpl;
+	var title = "Binding",
+	userName = "孙晓玉",
+	lang = {label:"韩文"};
+	
+	function init(){
+		m = new Tpl(dom);
+		m.dataProvider = @this;
+	}
+	
+	set label(value){
+		lang.label = value;
+		@this.key = {userName:"用户名"};
+		update(@this);
+	}
+	
+	get label(){
+		return lang.label;
+	}
+	
+	
+	
+</script>

@@ -1,0 +1,27 @@
+<!-- 时间 -->
+<div>
+	<input type="text" id="date" />
+</div>
+<script>
+	function init(obj,attr){
+		var value = obj[attr];
+		if(value && value != ""){
+			value = value.split(" ")[0];
+		}
+		window.date = new ? rolldate.Date({
+			el:'#$date',
+			format:'YYYY-MM-DD hh:mm:ss',
+			value:value,
+			confirmEnd:function(el,date){
+				if(date){
+					obj.dataContext[attr] = date;
+				}
+				
+				$(dom).remove();
+			}
+		});
+		$(date).on("input",function(){
+			alert($date.value);
+		}).trigger("click");
+	}
+</script>

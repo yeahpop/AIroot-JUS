@@ -1,0 +1,3 @@
+release-path F:/AIroot/fankui-release/ 
+/MControl/ http://172.16.0.201:8620/MControl/ 
+pattern-01 /MControl/ http://172.16.0.201:8620/MControl/ 

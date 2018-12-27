@@ -307,7 +307,7 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 
 		if t.TagType == 12 {
 			tj := &JUS{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
-			tj.CreateFromString(s.root, "", nil, t.Value, "temp")
+			tj.CreateFromString(s.root, "", nil, t.Value, "temp", s.jus)
 			tl = append(tl, &Tag{Value: "Module(\"" + Escape(tj.ReadHTML().ToString()) + "\",\f)", TagType: 0})
 			continue
 		}

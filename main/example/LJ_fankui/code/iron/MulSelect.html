@@ -1,0 +1,253 @@
+<!-- 省份选择 -->
+<css>
+	body{
+		box-sizing:border-box;
+		position:fixed;
+		flex-direction:column;
+		display:flex;
+		background-color:rgba(0,0,0,0.2);
+		justify-content:center;
+		align-items:center;
+		left:0px;
+		top:0px;
+		width:100%;
+		height:100%;
+	}
+	.title{
+		display:flex;
+		position:relative;
+		flex-shrink: 0;
+		align-items:center;
+		justify-content:center;
+		font-size:14px;
+		height:36px;
+		background-color:#f5f5f5;
+		text-align:center;
+	}
+	.header{
+		display:flex;
+		flex-shrink: 0;
+		align-items:center;
+		height:36px;
+		background-color:#ffffff;
+		text-align:center;
+		border-bottom:1px solid #dddddd;
+		padding-left:10px;
+		box-sizing:border-box;
+	}
+	.header .label{
+		font-size:14px;
+		margin: 0px 10px 0px 0px;
+		padding: 7px 0px 7px 0px;
+		border-bottom:1px solid #ffffff;
+		white-space: nowrap;
+		overflow:hidden;
+		text-overflow:ellipsis;
+	}
+	
+	.header .label>span{
+		color:#3E65F1;
+	}
+	
+	.header .label.selected{
+		border-bottom:2pt solid #3E65F1;
+	}
+	.panel{
+		display:flex;
+		flex-direction:column;
+		overflow:hidden;
+		background-color:#ffffff;
+		padding:10px;
+		height:100%;
+
+	}
+	.option{
+		font-size: 14px;
+		line-height: 26px;
+		color:#444444;
+	}
+	
+	.option.selected{
+		color:#3E65F1;
+		background:url(img/icon/sel.png) no-repeat;
+		background-position:100% center;
+		background-size: 8px;
+		padding-right: 15px;
+	}
+	
+	.pro{
+		overflow: hidden;
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+	}
+</css>
+<div>
+	<div id="closeBtn" style="width:100%;height:100%;"></div>
+	<div id="panel" style="display:flex;flex-direction:column;width:100%;height:100%;justify-content:flex-end">
+		<div class="title">
+			<div>请选择</div>
+		</div>
+		<div id="header" class="header">
+			
+			
+		</div>
+		<div class="panel">
+			<div id="pro" class="pro"></div>
+		</div>
+	</div>
+	
+</div>
+<script>
+	private var titleList = [];
+	private var _level = -1;
+	private var current = -1;
+	private var _dataLabel = null;
+	private var _dataField = null;
+	//当选择完成时候
+	public var onFinish:Function = null;
+	
+	/**
+	 * 数据URL，初始URL参数
+	 */
+	function init(url:String,data:Object){
+		#closeBtn.click(function(){
+			$(dom).remove();
+		});
+		$(header).on("click",".label",function(){
+			var lst = #header.find(">div");
+			lst.removeClass("selected");
+			var p = null;
+			var f = false;
+			for(var i = 0;i<lst.length;i++){
+				p = lst[i];
+				if(p == this){
+					lst.eq(i).addClass("selected");
+					loadData(url,titleList[i].data);
+					f = true;
+					continue;
+				}
+				if(f){
+					lst.eq(i).remove();
+				}
+			}
+			lst.length = 0;
+		});
+		$(pro).on("click",".option",function(){
+			titleList[current].node.innerText = titleList[current].dataLabel= this.innerText;
+			titleList[current].dataField = this.getAttribute("value");
+			titleList[current].node.setAttribute("value",this.getAttribute("value"));
+			var data = {cmd:"jqlx",key:this.getAttribute("value")};
+			createTitle("请选择",url,data);
+			#pro.empty();
+		});
+		createTitle("请选择",url,data);
+		
+	}
+	
+	
+	/**
+	 * 增加标题
+	 */
+	function addTitle(dataLabel,dataField){
+		
+	}
+	
+	/**
+	 * 设置标签数据源
+	 */
+	set dataLabel(value:String){
+		_dataLabel = value;
+	}
+	
+	/**
+	 * 设置数据源
+	 */
+	set dataField(value:String){
+		_dataField = value;
+	}
+	
+	
+	/**
+	 * 设置显示界别
+	 * 默认为-1，表示无限
+	 */
+	set level(value){
+		_level = value;
+	}
+	
+	
+	/**
+	 * 数据标题
+	 */
+	function createTitle(title:String,url:String,data:String){
+		#header.find(">div").removeClass("selected");
+		var d = document.createElement("div");
+		d.setAttribute("class","label selected");
+		d.setAttribute("index",current);
+		var s = document.createElement("span");
+		s.innerText = title;
+		d.appendChild(s);
+		if(_level != -1 && current == _level){
+			submitEvt();
+			return;
+		}
+		header.appendChild(d);
+		titleList.push({node:d,data:data});
+		loadData(url,data);
+		
+		
+		
+		current ++;
+	}
+	
+	/**
+	 * 加载数据
+	 */
+	function loadData(url,data){
+		if(url == null){
+			return;
+		}
+	
+		asjs.load(url,function(e){
+			var data = JSON.parse(e.target.data);
+			if(data.length>0){
+				var str = "";
+				var p = null;
+				var txt = "";
+				for(var i = 0;i<data.length;i++){
+					p = data[i];
+					//if(p.qname("value") == titleList[current].node.text().trim()){
+						txt = " selected";
+					//}else{
+						txt = "";
+					//}
+					str += "<div class='option" + txt + "' value='" + p.key + "'>" + p.value + "</div>";
+				}
+				pro.innerHTML = str;
+			}else{
+				submitEvt();
+			}
+			
+		},data);
+	}
+	
+	
+	public get data():Array{
+		return titleList;
+		
+	}
+	
+	/**
+	 * 提交信息
+	 */
+	function submitEvt(){
+		if(onFinish){
+			onFinish({target:@this});
+		}
+		$(dom).remove();
+	}
+	
+	
+</script>

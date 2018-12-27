@@ -4,6 +4,8 @@ package util
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	. "jus"
 	. "jus/str"
 	. "jus/tool"
@@ -258,9 +260,19 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 		}
 
 		if t.TagType == 12 {
-			tj := &JUS{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
-			tj.CreateFromString(s.root, "", nil, t.Value, "temp")
-			tl = append(tl, &Tag{Value: "Module(\"" + Escape(tj.ReadHTML().ToString()) + "\",__APPDOMAIN__)", TagType: 0})
+			md5Ctx := md5.New()
+			md5Ctx.Write([]byte(t.Value))
+			cipherStr := md5Ctx.Sum(nil)
+			bs := hex.EncodeToString(cipherStr)
+			ft := &JUS{SYSTEM_PATH: s.jus.SYSTEM_PATH, CLASS_PATH: s.jus.CLASS_PATH}
+			for _, v := range s.jus.pkgMap {
+				t.Value = "<@import value='" + v + "'/>" + t.Value
+			}
+			ft.CreateFromString(s.root, "", nil, t.Value, bs, nil)
+			tl = append(tl, &Tag{Value: "getModule(\"" + bs + "\",__APPDOMAIN__)", TagType: 0})
+			sb := bytes.NewBufferString("")
+			s.jus.ToFormatLine("I", bs, "H"+ft.ToFormatString(), sb)
+			s.jus.GetRoot().scriptElementBuffer = append(s.jus.GetRoot().scriptElementBuffer, sb.String())
 			continue
 		}
 
@@ -726,7 +738,6 @@ func (s *HTMLScript) ReadFromString(script string) string {
 	}
 	if len(s.jus.CommandCode) > 0 {
 		for _, v := range s.jus.CommandCode {
-			//st.WriteString(v.Value)
 			s.jus.AddRun(&RunElem{Type: "C", Name: s.jus.domain, Value: v.Value})
 		}
 	}

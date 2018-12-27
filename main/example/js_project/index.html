@@ -22,14 +22,16 @@
 	<ol id="lst">
 	</ol>
     <script>
+		var data = {data:{name:"Runboo"},value:123};
 		console.time();
 		JUS.loadClass("Index",function(e){
 			var Box = JUS.getModule("Main");
+			var Box2 = JUS.getModule("Main2");
 			var t = null;
-			for(var i = 0;i<10000;i++){
-				lst.appendChild(new Box(i));
+			for(var i = 0;i<2;i++){
+				lst.appendChild(new Box(data));
 			}
-			
+			lst.appendChild(new Box2(data.data));
 			console.timeEnd();
 		});
     </script>

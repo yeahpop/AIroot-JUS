@@ -138,6 +138,7 @@ var SysPath string
 var SysLibPath string
 var SysStartDate string
 var _Count_ int = 0
+var CODE_PATH = "/src"
 
 /**
  * 创建工程目录
@@ -150,7 +151,7 @@ func CreateProjectDir(path string) bool {
 		return false
 	}
 	os.MkdirAll(path, 0777)
-	os.MkdirAll(path+"/code", 0777)
+	os.MkdirAll(path+CODE_PATH, 0777)
 
 	os.MkdirAll(path+"/js", 0777)
 	s, _ := filepath.Abs("lib/js")
@@ -164,7 +165,7 @@ func CreateProjectDir(path string) bool {
 		defer f.Close()
 	}
 
-	f, e = os.Create(path + "/code/Main.html")
+	f, e = os.Create(path + CODE_PATH + "/Main.html")
 
 	if e == nil {
 		data, _ := GetCode("./lib/template/codeIndex.template")
@@ -554,7 +555,7 @@ func command(cmds []string) (bool, string) {
 			if len(cmds) > 1 && (zhCN[cmds[1]] == "" || len(cmds[1]) != len([]rune(cmds[1]))) {
 				if serverList[cmds[1]] == nil {
 					serverList[cmds[1]] = &JusServer{}
-					serverList[cmds[1]].CreateServer("./lib", "")
+					serverList[cmds[1]].CreateServer("./lib", "", CODE_PATH)
 					str = DevPrintln(2, lang["添加成功"], cmds[1]) //添加成功
 				} else {
 					str = DevPrintln(335, lang["已经添加"], cmds[1]) //已经添加
@@ -568,7 +569,6 @@ func command(cmds []string) (bool, string) {
 					}
 
 				}
-
 				if len(cmds) > 3 {
 					_, str = commandEvt("run " + cmds[1] + " " + cmds[3])
 				}
