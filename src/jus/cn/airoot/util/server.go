@@ -12,7 +12,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -138,10 +137,9 @@ func (u *JusServer) WebsocketList() []*connectElement {
 	return u.connectedList
 }
 
-func (u *JusServer) Start(addr string) {
+func (u *JusServer) Start(addr string, printf func(string, int, string)) string {
 	if u.Status {
-		fmt.Println("服务已经开启.")
-		return
+		return "服务已经开启."
 	}
 	if Index(addr, "http://") == 0 {
 		u.protocol = "http"
@@ -152,7 +150,7 @@ func (u *JusServer) Start(addr string) {
 	}
 	u.Addr = addr
 	go func() {
-		fmt.Println("JUS Server Started At: [" + addr + "]. Use protocol " + IfStr(u.protocol == "", "http", u.protocol))
+		printf("", 2, "JUS Server Started At: ["+addr+"]. Use protocol "+IfStr(u.protocol == "", "http", u.protocol)+"\r\n")
 		handler := http.NewServeMux()
 		handler.HandleFunc("/", u.root)
 		handler.HandleFunc("/index.edit/", u.editDirEvt)
@@ -169,13 +167,12 @@ func (u *JusServer) Start(addr string) {
 		}
 
 		if err != nil {
-			fmt.Println("status:", err)
+			printf("", 335, "status: ["+addr+"]"+err.Error()+".\r\n")
 		}
 		u.Status = false
-		fmt.Println("JUS Server END.")
-
+		printf("", 335, "["+addr+"]JUS Server END.\r\n")
 	}()
-
+	return ""
 }
 
 /**
@@ -205,6 +202,7 @@ func (u *JusServer) SetProject(path string) bool {
 		}
 		return true
 	} else {
+		u.RootPath = ""
 		fmt.Println("不存在[" + path + "]目录")
 		return false
 	}
@@ -1213,49 +1211,6 @@ func relEvt(server *JusServer, sysPath string, rootPath string, jusDirName strin
 	}
 
 	return []byte("nothing.")
-}
-
-/**
- * 命令代码
- */
-func (u *JusServer) CommandEvt(value string) bool {
-	cmds := FmtCmd(value)
-	if len(cmds) > 0 {
-		switch cmds[0] {
-		case "stop":
-			return false
-		case "ls":
-			return true
-		case "cd":
-			return true
-		case "crp": //创建一个工程
-			return true
-		case "stp": //设置工程目录
-			fmt.Println(cmds)
-			if len(cmds) > 1 {
-				u.RootPath = cmds[1]
-			}
-			fmt.Println("Reset Default Project Path :", u.RootPath)
-			return true
-		case "run": //运行工程
-			u.Start(cmds[1])
-
-			return true
-		case "color":
-			fmt.Println()
-			return true
-		case "gc":
-			runtime.GC()
-			fmt.Println("GC OK.")
-			return true
-		default:
-
-			return true
-		}
-	}
-
-	return true
-
 }
 
 /**

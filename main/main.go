@@ -4,6 +4,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+
 	//_ "image/jpeg"
 	//_ "image/png"
 	. "jus"
@@ -62,24 +63,25 @@ func init() {
 	zhCN["ctf"] = "ctf 创建模块页\r\n命令格式: ctf [-创建方式(-h|m|s|r)] <服务名称> <模块全路径>\r\n例如:ctf test component.Test\r\nctf test -hr component.Test\r\n"
 	zhCN["release"] = "release 发布工程\r\n命令格式: release <服务名称> [工程路径]\r\n例如:release test C:/jus/project/\r\n"
 	zhCN["run"] = "run 启动服务\r\n命令格式: run <服务名称> [IP:端口], 例如:run test 127.0.0.1:1511\r\n"
+	zhCN["run_not_set"] = "未设置发布目录，不能启动服务器;\r\n您可以使用stp命令设置发布目录。"
 	zhCN["shutdown"] = "shutdown 停止服务\r\n命令格式: shutdown <服务名称>\r\n"
 	zhCN["rm"] = "rm 移除服务\r\n命令格式: rm <服务名称>\r\n"
-	zhCN["lw"] = "lw 显示指定服务节点下Websocket连接用户\r\n命令格式: lw <服务名称> [-h]"
+	zhCN["lw"] = "lw 显示指定服务节点下Websocket连接用户\r\n命令格式: lw <服务名称> [-h]\r\n"
 	zhCN["info"] = "info 项目信息\r\n命令格式: rm <服务名称>\r\n"
 	zhCN["set"] = "set 设置项目信息\r\n命令格式: set <服务名称> <属性名称> <属性值> [属性值...]\r\n"
 	zhCN["ret"] = "ret 移除项目信息\r\n命令格式: ret <服务名称> <属性名称>\r\n"
 	zhCN["exit"] = "exit 退出\r\n命令格式: exit\r\n"
 	zhCN["lang"] = "lang 语言设置.\r\n命令格式: lang <zh/cn>\r\n"
 	zhCN["version"] = "version 软件版本号.\r\n命令格式: version\r\n"
-	zhCN["nat"] = "nat 它可以测试HTTP客户端请求的内容代码，并将其打印到屏幕上"
+	zhCN["nat"] = "nat 它可以测试HTTP客户端请求的内容代码，并将其打印到屏幕上\r\n"
 	zhCN["-c"] = "-c 关闭控制台输入功能\r\n命令格式: -c\r\n"
 	zhCN["webc"] = "webc 启动远程HTTP控制端通讯功能\r\n命令格式: webc [HTTP服务IP:端口]\r\n"
 	zhCN["bat"] = "bat 执行本程序的批处理文件，您可以执行多套批处理命令\r\n命令格式：bat <文件名称> [文件名称...]\r\n"
 	zhCN["stat"] = "stat 获取当前文件执行状态，例如时间等\r\n命令格式：stat\r\n"
 	enCH["文件不存在"] = "The '%s' file isn't exist. "
-	enCH["添加成功"] = "The [%s] add Success."
-	enCH["已经添加"] = "[%s] was Added."
-	enCH["项目已存在"] = "The project [%s] is exist."
+	enCH["添加成功"] = "The [%s] add Success.\r\n"
+	enCH["已经添加"] = "[%s] was Added.\r\n"
+	enCH["项目已存在"] = "The project [%s] is exist.\r\n"
 	enCH["建立项目"] = "create project [%s]."
 	enCH["项目挂载在"] = "The project mount at[%s] server."
 	enCH["遍历结束"] = "----list over----"
@@ -113,16 +115,17 @@ func init() {
 	enCH["ctf"] = "ctf create module file.\r\nCOMMAND: ctf [-Create Method(-h|m|s|r)] <Service Name> <Project Path>\r\nFor Example:ctf test component.Test\r\nctf test -hr component.Test\r\n"
 	enCH["release"] = "release release project.\r\nCOMMAND: release <Service Name> [Project Path]\r\nFor Example:release test C:/jus/project/\r\n"
 	enCH["run"] = "run Start service.\r\nCOMMAND: run <Service Name> [IP:PORT], For Example:run test 127.0.0.1:1511\r\n"
+	enCH["run_not_set"] = "The publishing directory is not set, the server cannot be started; \r\nYou can use the STP command to set up the publish directory."
 	enCH["shutdown"] = "shutdown Shutdown Service.\r\nCOMMAND: shutdown <Service Name>\r\n"
 	enCH["rm"] = "rm Remove Service.\r\nCOMMAND: rm <Service Name>\r\n"
-	enCH["lw"] = "lw display websocket list of Service\r\nCOMMAND: lw <Service Name> [-h]"
+	enCH["lw"] = "lw display websocket list of Service\r\nCOMMAND: lw <Service Name> [-h]\r\n"
 	enCH["info"] = "info The project infomation\r\nCOMMAND: rm <Service Name>\r\n"
 	enCH["set"] = "set Set project attributes.\r\nCOMMAND: set <Service Name> <AttributeName> <Value> [Value...]\r\n"
 	enCH["ret"] = "ret Remove project attributes.\r\nCOMMAND: set <Service Name> <AttributeName>\r\n"
 	enCH["exit"] = "exit Exit.\r\nCOMMAND: exit\r\n"
 	enCH["lang"] = "lang Language Setting.\r\nCOMMAND: lang <zh/cn>\r\n"
 	enCH["version"] = "version Software Version.\r\nCOMMAND: version\r\n"
-	enCH["nat"] = "nat It's can test http request medhod and print request code."
+	enCH["nat"] = "nat It's can test http request medhod and print request code.\r\n"
 	enCH["-c"] = "-c Close Console Input Method.\r\nCOMMAND: -c\r\n"
 	enCH["webc"] = "webc Start HTTP client server to this.\r\nCOMMAND: webc [HTTP Service IP:PORT]\r\n"
 	enCH["bat"] = "bat Execute local batch file,you can execute manay batch files.\r\n\r\nCOMMAND：bat <batch file Name> [batch file Name...]\r\n"
@@ -134,6 +137,7 @@ func init() {
  */
 var serverList map[string]*JusServer = make(map[string]*JusServer)
 var testHandle map[string]*TestServer = make(map[string]*TestServer)
+var webCList map[string]*websocket.Conn = make(map[string]*websocket.Conn) //webControl用户列表
 var SysPath string
 var SysLibPath string
 var SysStartDate string
@@ -231,9 +235,7 @@ func webControl(addr string) {
 	}()
 }
 
-/**
- * 控制首页
- */
+//控制首页
 func root(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/" {
 		http.Redirect(w, req, "/webc.html", http.StatusFound)
@@ -259,21 +261,37 @@ func jusEvt(w http.ResponseWriter, req *http.Request) {
 	if Exist(path) {
 		root(w, req)
 	} else {
-		jus := &JUS{SYSTEM_PATH: "lib", CLASS_PATH: "lib/code/"}
+		jus := &JUS{SYSTEM_PATH: "lib", CLASS_PATH: "lib/" + CODE_PATH + "/"}
 		className := Substring(req.RequestURI, StringLen(jusDirName), LastIndex(req.RequestURI, "."))
-		if jus.CreateFrom("lib/code/", "", nil, className) {
+		if jus.CreateFrom("lib/"+CODE_PATH+"/", "", nil, className) {
 			b := jus.ToFormatBytes()
 			w.Header().Add("Content-Length", strconv.Itoa(len(b)))
 			w.Write(b)
 		} else {
 			fmt.Println("不存在", className)
 		}
+	}
+}
 
+//广播到客户
+//name 	向指定用户名广播，如果填写为空，则向所有用户广播
+//value	广播内容
+func BroadCast(name string, cls int, value string) {
+	d := []byte(DevPrint(cls, value))
+	if name == "" {
+		for _, v := range webCList {
+			v.Write(d)
+		}
+	} else {
+		if webCList[name] != nil {
+			webCList[name].Write(d)
+		}
 	}
 
 }
 
 func wsHandler(ws *websocket.Conn) {
+	user := ""
 	msg := make([]byte, 512)
 	n, err := ws.Read(msg)
 	if err != nil {
@@ -285,7 +303,11 @@ func wsHandler(ws *websocket.Conn) {
 	cmds := FmtCmd(cmdstr)
 	if len(cmds) == 3 {
 		if cmds[0] == "login" && havUser(cmds) {
-
+			user = cmds[1]
+			webCList[user] = ws
+			defer func() {
+				delete(webCList, user)
+			}()
 		} else {
 			ws.Write([]byte("The Name or Password is wrong."))
 			ws.Close()
@@ -318,7 +340,8 @@ func wsHandler(ws *websocket.Conn) {
 		}
 	}
 	ws.Close()
-	fmt.Println("一个连接已经结束")
+	//fmt.Println("一个连接已经结束")
+	BroadCast("", 11, "["+user+"] login out.")
 }
 
 /**
@@ -702,21 +725,20 @@ func command(cmds []string) (bool, string) {
 			}
 			return true, str
 		case "run": //运行工程
-			if len(cmds) > 2 {
-				if serverList[cmds[1]] == nil {
-					str = DevPrintln(335, lang["不存在服务"], cmds[1])
-				} else {
-					str = DevPrintln(2, lang["服务正在启动"], cmds[1], cmds[2])
-					serverList[cmds[1]].Start(cmds[2])
-
+			if len(cmds) > 1 {
+				port := ":80"
+				if len(cmds) > 2 {
+					port = cmds[2]
 				}
-			} else if len(cmds) > 1 {
 				if serverList[cmds[1]] == nil {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
 				} else {
-					str = DevPrintln(2, lang["服务正在启动"], cmds[1], ":80")
-					serverList[cmds[1]].Start(":80")
-
+					if serverList[cmds[1]].RootPath != "" {
+						str = DevPrintln(2, lang["服务正在启动"], cmds[1], port)
+						serverList[cmds[1]].Start(port, BroadCast)
+					} else {
+						str = DevPrintln(335, lang["run_not_set"])
+					}
 				}
 			} else {
 				str = DevPrintln(8, lang["run"])
@@ -852,7 +874,7 @@ func command(cmds []string) (bool, string) {
 			return true, str
 		case "webc": //WEB程序控制
 			if len(cmds) == 2 { //默认端口3690
-				webControl(":" + cmds[1])
+				webControl(cmds[1])
 			} else if len(cmds) == 3 { //-del
 				if cmds[1] == "-del" {
 					if RetData(cmds[2:]) {
