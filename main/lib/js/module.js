@@ -1499,7 +1499,33 @@ function URLLoader(id){
 		if(!q){
 			tplMap.set(value,q = []);
 		}
+		var p = null;
+		for(var i = 0;i<q.length;i++){
+			p = q[i];
+			if(p.eb == false){
+				q[i] = obj;
+				return;
+			}
+		}
 		q.push(obj);
+	}
+	
+	
+	/**
+	 * 模板移动
+	 */
+	function __TPL_MAP_REMOVE__(value,target){
+		var q = tplMap.get(value);
+		if(q){
+			var p = null;
+			for(var i = 0;i<q.length;i++){
+				p = q[i];
+				if(p.target == target){
+					q.splice(i,1);
+					i--;
+				}
+			}
+		}
 	}
 	
 
