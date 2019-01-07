@@ -122,6 +122,13 @@ out:
 			}
 		}
 
+		if ch == ':' {
+			if len(tag) > 0 {
+				sel.Push(&ClassElement{Value: string(tag), ElementType: 1})
+				tag = tag[0:0]
+			}
+		}
+
 		if ch == ',' {
 			if len(tag) > 0 {
 				sel.Push(&ClassElement{Value: string(tag), ElementType: -1}).NextRule()

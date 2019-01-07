@@ -223,7 +223,12 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 					if t.Value[0] == '$' {
 						t.Value = t.Value[1:]
 					}
-					t.Value = "window[__NAME__+'" + t.Value + "']" //hObj.Name
+					if hObj.HTMLObjectType == -1 {
+						t.Value = "dom"
+					} else {
+						t.Value = "window[__NAME__+'" + t.Value + "']" //hObj.Name
+					}
+
 				}
 				tl = append(tl, t)
 			} else {

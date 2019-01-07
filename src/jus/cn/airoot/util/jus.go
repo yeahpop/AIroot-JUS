@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 	"io/ioutil"
 	. "jus"
 	. "jus/str"
@@ -839,24 +838,6 @@ func (j *JUS) domainHTML(child []*HTML) {
 	}
 }
 
-/**
- * include code
- * @param html
- * @throws IOException
- */
-func (j *JUS) includeCode(h []*HTML) {
-	for _, p := range h {
-		if p.TagName() == "@include" {
-			tpr, err := GetCode(j.root + "/" + p.GetAttr("value"))
-			if err != nil {
-				fmt.Println(j.root + "/" + p.GetAttr("value") + " isn't Exists.")
-			}
-			p.ReplaceWithFormString(tpr)
-		}
-		j.includeCode(p.Child())
-	}
-}
-
 func (j *JUS) GetPackageMap() map[string]string {
 	return j.pkgMap
 }
@@ -1093,15 +1074,17 @@ func (j *JUS) ReadHTML() *HTML {
 		tHTML.ReadFromString("(function(){ var $$ = getModule(\"" + j.className + "\",__APPDOMAIN__)(" + tps.String() + ");\r\n" + tst.String() + "return $$;})")
 		return tHTML
 	}
-
 	j.rootHTML()
 	j.importHTML()
 	j.initObj(j.html)
-
-	j.includeCode([]*HTML{j.html})
 	htmls := j.html.GetUnTextChild()
 	if len(htmls) == 1 {
 		j.html = htmls[0]
+	} else {
+		j.html = &HTML{}
+		j.html.ReadFromString("<div></div>")
+		j.html = j.html.At(0)
+		j.html.InsertList(htmls, 0)
 	}
 	//加载外部CSS
 	if j.cssPath != "" {
@@ -1119,7 +1102,7 @@ func (j *JUS) ReadHTML() *HTML {
 		j.style.ReadFromString(j.scanMedia(j.styleBuffer.String()))
 	}
 
-	//j.html.SetAttr("isComponent", "true")
+	j.idMap[j.html.GetAttr("id")] = &HTMLObject{Name: j.domain, HTMLObjectType: -1} //代表容器节点
 	j.html.SetAttr("id", j.domain)
 	j.html.SetAttr("isroot", "true")
 	headCss := ""

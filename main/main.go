@@ -319,7 +319,7 @@ func wsHandler(ws *websocket.Conn) {
 	}
 
 	//hostName, _ := os.Hostname()
-	str := DevPrint(11, "  "+version+" ")
+	str := DevPrint(11, version+" ")
 	//str += DevPrint(880, " Running at "+runtime.GOARCH+" "+runtime.GOOS+" "+hostName+" ")
 	ws.Write([]byte(str))
 	for {
