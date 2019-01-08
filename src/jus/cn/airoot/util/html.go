@@ -8,10 +8,21 @@ import (
 
 //特殊关键字
 var keyWords = [...]string{"script", "style", "css", "~script", "@uncare"}
+var closeTag = [...]string{"input", "img", "br", "meta", "hr", "source", "link"}
 
 //判断是不是关键字
 func isKeyWord(value string) bool {
 	for _, v := range keyWords {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
+//判断是否为自关闭标签
+func isCloseTag(value string) bool {
+	for _, v := range closeTag {
 		if v == value {
 			return true
 		}
@@ -320,6 +331,9 @@ m:
 					return h, position
 				}
 			} else {
+				if isCloseTag(tagName) { //判断是否为自关闭标签
+					tagType = 0
+				}
 				tagTemp = append(tagTemp, tagName)
 				tag = &HTML{tag: tagName, value: sb.toString(), parent: parent, tagType: tagType}
 				tag.Create()

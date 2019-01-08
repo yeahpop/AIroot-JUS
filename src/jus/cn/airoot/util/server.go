@@ -214,7 +214,7 @@ func (u *JusServer) SetProject(path string) bool {
  */
 func (u *JusServer) CreateModule(cls string, className string) bool {
 	tPath := "" //临时路径
-	path := u.RootPath + "/code/" + Replace(className, ".", "/")
+	path := u.RootPath + u.SrcPath + "/" + Replace(className, ".", "/")
 	dirPath := Substring(path, 0, LastIndex(path, "/"))
 
 	if !Exist(dirPath) {
@@ -483,10 +483,10 @@ func (u *JusServer) jusEditEvt(w http.ResponseWriter, req *http.Request) {
 	if Exist(path) {
 		u.root(w, req)
 	} else {
-		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/code/"}
+		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + u.SrcPath + "/"}
 		className := Substring(req.RequestURI, StringLen("index.edit/"+u.jusDirName), LastIndex(req.RequestURI, "."))
-		if jus.CreateFrom(u.SysPath+"/code/", "", nil, className) {
-			jus.resPath = "code"
+		if jus.CreateFrom(u.SysPath+u.SrcPath+"/", "", nil, className) {
+			jus.resPath = u.SrcPath
 			b := jus.ToFormatBytes()
 			w.Header().Add("Content-Length", strconv.Itoa(len(b)))
 			w.Write(b)
@@ -561,7 +561,7 @@ func (u *JusServer) root(w http.ResponseWriter, req *http.Request) {
 func (u *JusServer) classList() string {
 	u.useClassList = u.useClassList[0:0]
 	str := bytes.NewBufferString("")
-	path, _ := filepath.Abs(u.SysPath + "/code/")
+	path, _ := filepath.Abs(u.SysPath + u.SrcPath + "/")
 	u.walkClassFiles(path, path)
 	format :=
 		`<html>
@@ -769,7 +769,7 @@ func (u *JusServer) classList() string {
 		str.WriteString(`</table>`)
 	}
 	format = strings.Replace(format, "{@code1}", str.String(), -1)
-	path, _ = filepath.Abs(u.RootPath + "/code/")
+	path, _ = filepath.Abs(u.RootPath + u.SrcPath + "/")
 	u.useClassList = u.useClassList[0:0]
 	u.walkClassFiles(path, path)
 	list = make(map[string][]string)
@@ -1034,7 +1034,6 @@ func (u *JusServer) apiEvt(req *http.Request) string {
 	case "ls":
 		return u.getDirList(u.RootPath + req.FormValue("path"))
 	case "getCode": //获取文件内容
-		fmt.Println(u.RootPath + req.FormValue("path"))
 		value, err := GetCode(u.RootPath + req.FormValue("path"))
 		if err == nil {
 			return value
@@ -1042,14 +1041,14 @@ func (u *JusServer) apiEvt(req *http.Request) string {
 			return ""
 		}
 	case "module":
-		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/code/"}
+		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + u.SrcPath + "/"}
 		className := Substring(req.RequestURI, StringLen(u.jusDirName), LastIndex(req.RequestURI, "."))
 		className = Replace(className, "/", ".")
-		if jus.CreateFromString(u.RootPath+"/code/", "", nil, req.FormValue("value"), className, nil) {
-			jus.resPath = "code"
+		if jus.CreateFromString(u.RootPath+u.SrcPath+"/", "", nil, req.FormValue("value"), className, nil) {
+			jus.resPath = u.SrcPath
 			return jus.ToFormatString()
 		} else {
-			fmt.Println("不存在", className)
+			fmt.Println("no exist: ", className)
 		}
 		jus = nil
 		return ""
@@ -1155,7 +1154,7 @@ func (u *JusServer) Release() {
 		if v != "" {
 			os.MkdirAll(v, 0777)
 		}
-		Copy(u.RootPath, v, u.RootPath+"/code/")
+		Copy(u.RootPath, v, u.RootPath+u.SrcPath+"/")
 
 		jusPath := v + u.jusDirName + "/"
 		if u.RootPath != "" {
@@ -1163,7 +1162,7 @@ func (u *JusServer) Release() {
 		}
 
 		//发布Code,先遍历
-		u.WalkFiles(u.RootPath+"/code/", jusPath)
+		u.WalkFiles(u.RootPath+u.SrcPath+"/", jusPath)
 	}
 
 }
@@ -1173,8 +1172,6 @@ func (u *JusServer) WalkFiles(src string, dest string) {
 	filepath.Walk(src,
 		func(f string, fi os.FileInfo, err error) error { //遍历目录
 			dPath := Substring(f, StringLen(src), -1)
-			//fmt.Println(">>", f, ">>", dPath, fi.Name())
-
 			if dPath == "" {
 				return nil
 			}
@@ -1201,11 +1198,11 @@ func (u *JusServer) WalkFiles(src string, dest string) {
 }
 
 func relEvt(server *JusServer, sysPath string, rootPath string, jusDirName string, path string) []byte {
-	jus := &JUS{SERVER: server, SYSTEM_PATH: sysPath, CLASS_PATH: sysPath + "/code/"}
+	jus := &JUS{SERVER: server, SYSTEM_PATH: sysPath, CLASS_PATH: sysPath + server.SrcPath + "/"}
 	lp := LastIndex(path, ".")
 	className := Substring(path, 0, lp)
 	fmt.Println("export:", className)
-	if jus.CreateFrom(rootPath+"/code/", "", nil, className) {
+	if jus.CreateFrom(rootPath+server.SrcPath+"/", "", nil, className) {
 		jus.resPath = "juis"
 		return jus.ToFormatBytes()
 	}

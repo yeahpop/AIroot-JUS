@@ -50,12 +50,11 @@ func WalkFiles(src string, dest string, unCopy string) {
 			a, _ := filepath.Abs(f)
 			b, _ := filepath.Abs(unCopy)
 			if a == b {
-				return nil
+				return filepath.SkipDir
 			}
 			dPath = dest + "/" + dPath
 
 			if fi.IsDir() {
-				fmt.Println("dir", fi.Name(), CharAt(fi.Name(), 0) != ".")
 				if CharAt(fi.Name(), 0) != "." { //只复制开头不为点的数据
 					os.MkdirAll(dPath, 0777) //建立文件目录
 					//WalkFiles(f, dPath, unCopy) //不用递归遍历，filepath.Wal支持逐级遍历
