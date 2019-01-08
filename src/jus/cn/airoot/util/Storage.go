@@ -59,10 +59,8 @@ func WalkFiles(src string, dest string, unCopy string) {
 					os.MkdirAll(dPath, 0777) //建立文件目录
 					//WalkFiles(f, dPath, unCopy) //不用递归遍历，filepath.Wal支持逐级遍历
 				} else {
-
 					return filepath.SkipDir
 				}
-
 			} else {
 				fmt.Println("copy", f, dPath)
 				CopyFile(dPath, f)

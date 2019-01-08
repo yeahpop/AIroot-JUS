@@ -160,6 +160,8 @@ func CreateProjectDir(path string) bool {
 	os.MkdirAll(path+"/js", 0777)
 	s, _ := filepath.Abs("lib/js")
 	Copy(s, path+"/js", "")
+	s, _ = filepath.Abs("lib/icon/")
+	Copy(s, path, "")
 	os.MkdirAll(path+"/img", 0777)
 	os.MkdirAll(path+"/css", 0777)
 	f, e := os.Create(path + "/index.html")

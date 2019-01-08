@@ -1217,7 +1217,7 @@ function URLLoader(id){
 				return window[uuid];
 			}
 		}
-		return nil;
+		return null;
 	}
 	
 	function __UUID__(){
@@ -1375,7 +1375,7 @@ function URLLoader(id){
 				return;
 			}
 		}
-		url = "juis/" + module.replace(/\./g,'/') + ".html";
+		var url = "juis/" + module.replace(/\./g,'/') + ".html";
 		var load = window.location.toString().indexOf("http:") == 0 ? asjs.post : asjs.get;
 		var _CF_ = null;
 		load(url,function(e){
