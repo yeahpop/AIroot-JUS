@@ -960,8 +960,8 @@ func command(cmds []string) (bool, string) {
 				if serverList[cmds[1]] == nil {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
 				} else {
-					s, _ := filepath.Abs("lib/js/module.js")
-					str = DevPrintln(8, "copy "+s+serverList[cmds[1]].RootPath+"/js/module.js")
+					s, _ := filepath.Abs(SysLibPath + "/js/module.js")
+					str = DevPrintln(8, "copy "+s+" "+serverList[cmds[1]].RootPath+"/js/module.js")
 					CopyFile(serverList[cmds[1]].RootPath+"/js/module.js", s)
 				}
 			} else {
