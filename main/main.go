@@ -588,7 +588,7 @@ func command(cmds []string) (bool, string) {
 			if len(cmds) > 1 && (zhCN[cmds[1]] == "" || len(cmds[1]) != len([]rune(cmds[1]))) {
 				if serverList[cmds[1]] == nil {
 					serverList[cmds[1]] = &JusServer{}
-					serverList[cmds[1]].CreateServer("./lib", "", CODE_PATH)
+					serverList[cmds[1]].CreateServer(SysLibPath, "", CODE_PATH)
 					str = DevPrintln(2, lang["添加成功"], cmds[1]) //添加成功
 				} else {
 					str = DevPrintln(335, lang["已经添加"], cmds[1]) //已经添加
@@ -1083,8 +1083,14 @@ func main() {
 	if args != "" {
 		fmt.Println("ARGS", args)
 	}
+	running := true
+	if len(os.Args) == 2 && (Index(args, "/") != -1 || Index(args, "\\") != -1) {
+		args = "add a0 " + args + " :80"
+	} else {
+		running, _ = BatCode("jus.conf", true) //程序默认执行一个控制类
+	}
+
 	//键盘输入
-	running, _ := BatCode("jus.conf", true) //程序默认执行一个控制类
 	quit := ""
 	if running {
 		running, quit = commandEvt(args)

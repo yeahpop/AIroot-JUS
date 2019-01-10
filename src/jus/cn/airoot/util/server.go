@@ -182,30 +182,33 @@ func (u *JusServer) SetProject(path string) int {
 	if Exist(path) {
 		rpath, _ := filepath.Abs(path)
 		u.RootPath = rpath
-		//u.fServer = http.FileServer(http.Dir(path))
 		u.fServerList = make(map[string]http.Handler)
 		u.fServerList[rpath] = http.FileServer(http.Dir(path))
+		if Exist(u.RootPath + "/.jus") {
+			u.pattern = make(map[string]*urlMap)
+			for _, v := range u.GetAttrLike("pattern") {
+				u.AddProxy(v[0], v[1])
+			}
+			for _, v := range u.GetAttrLike("ws_accept") { //添加websocket用户验证url
+				fmt.Println("ws_accept", v[0])
+				u.wsURL = v[0]
+			}
+			for _, v := range u.GetAttrLike("string") { //添加项目变量
+				u.AddServerVar("string", "@"+v[0], v[1])
+			}
+			for _, v := range u.GetAttrLike("variable") { //添加项目变量
+				u.AddServerVar("variable", "@"+v[0], v[1])
+			}
+			//验证module.js和当前服务器版本是否一致
+			if Exist(rpath + "/js/module.js") {
+				pm := file2Md5(rpath + "/js/module.js")
+				sm := file2Md5(u.SysPath + "/js/module.js")
+				if sm != pm {
+					return 2
+				}
+			}
+		}
 
-		u.pattern = make(map[string]*urlMap)
-		for _, v := range u.GetAttrLike("pattern") {
-			u.AddProxy(v[0], v[1])
-		}
-		for _, v := range u.GetAttrLike("ws_accept") { //添加websocket用户验证url
-			fmt.Println("ws_accept", v[0])
-			u.wsURL = v[0]
-		}
-		for _, v := range u.GetAttrLike("string") { //添加项目变量
-			u.AddServerVar("string", "@"+v[0], v[1])
-		}
-		for _, v := range u.GetAttrLike("variable") { //添加项目变量
-			u.AddServerVar("variable", "@"+v[0], v[1])
-		}
-		//验证module.js和当前服务器版本是否一致
-		pm := file2Md5(rpath + "/js/module.js")
-		sm := file2Md5(u.SysPath + "/js/module.js")
-		if sm != pm {
-			return 2
-		}
 		return 1
 	} else {
 		u.RootPath = ""
