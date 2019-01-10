@@ -1085,7 +1085,7 @@ func main() {
 	}
 	running := true
 	if len(os.Args) == 2 && (Index(args, "/") != -1 || Index(args, "\\") != -1) {
-		args = "add a0 " + args + " :80"
+		args = "add d0 " + args + " :80"
 	} else {
 		running, _ = BatCode("jus.conf", true) //程序默认执行一个控制类
 	}
