@@ -257,9 +257,11 @@ func (s *HTMLScript) initScriptFrom(js *MScript, _this_ string, _pri_ string) st
 			}
 
 			if hObj != nil {
-				param.Value = "' + __NAME__ + '" + param.Value //hObj.Name
+				param.Value = "__NAME__ + '" + param.Value //hObj.Name
+				tl = append(tl, &Tag{Value: "$JGID(" + param.Value + "')", TagType: 0})
+			} else {
+				tl = append(tl, &Tag{Value: "$JGID('" + param.Value + "')", TagType: 0})
 			}
-			tl = append(tl, &Tag{Value: "$('#" + param.Value + "')", TagType: 0})
 
 			continue
 		}

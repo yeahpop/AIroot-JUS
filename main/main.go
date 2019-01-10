@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "Airoot platform 0.9.9 &ws"
+var version string = "Airoot platform 0.9.10 &ws"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -49,11 +49,13 @@ func init() {
 	zhCN["属性移除失败"] = "%s 移除失败,可能不存在此[%s]属性."
 	zhCN["服务关闭失败"] = "%s 服务停止失败"
 	zhCN["工程设置成功"] = "[%s] 的工程路径 [%s] 设置成功."
+	zhCN["工程设置失败"] = "[%s] 的工程路径 [%s] 设置失败."
 	zhCN["服务正在启动"] = "%s 正在启动[%s]"
 	zhCN["关闭服务"] = "%s 服务关闭[%s]"
 	zhCN["发布完成"] = "----发布完成----"
 	zhCN["添加WEB用户成功"] = "添加WEB用户成功."
 	zhCN["移除WEB用户成功"] = "移除WEB用户成功."
+	zhCN["modulev"] = "[%s] js/module.js 版本不一致."
 	zhCN["模块创建成功"] = "模块创建成功."
 	zhCN["Test运行在"] = "%s 运行在 [%s]"
 	zhCN["ls"] = "ls 服务列表\r\n命令格式: ls\r\n"
@@ -70,6 +72,7 @@ func init() {
 	zhCN["info"] = "info 项目信息\r\n命令格式: rm <服务名称>\r\n"
 	zhCN["set"] = "set 设置项目信息\r\n命令格式: set <服务名称> <属性名称> <属性值> [属性值...]\r\n"
 	zhCN["ret"] = "ret 移除项目信息\r\n命令格式: ret <服务名称> <属性名称>\r\n"
+	zhCN["send"] = "send 通过Websocket向指定节点发送数据\r\n命令格式: send <服务名称> <用户ID> <UUID> <内容>\r\n"
 	zhCN["exit"] = "exit 退出\r\n命令格式: exit\r\n"
 	zhCN["lang"] = "lang 语言设置.\r\n命令格式: lang <zh/cn>\r\n"
 	zhCN["version"] = "version 软件版本号.\r\n命令格式: version\r\n"
@@ -78,11 +81,12 @@ func init() {
 	zhCN["webc"] = "webc 启动远程HTTP控制端通讯功能\r\n命令格式: webc [HTTP服务IP:端口]\r\n"
 	zhCN["bat"] = "bat 执行本程序的批处理文件，您可以执行多套批处理命令\r\n命令格式：bat <文件名称> [文件名称...]\r\n"
 	zhCN["stat"] = "stat 获取当前文件执行状态，例如时间等\r\n命令格式：stat\r\n"
-	enCH["文件不存在"] = "The '%s' file isn't exist. "
+	zhCN["update"] = "update 更新项目的module.js包\r\n命令格式：update <服务名称>\r\n"
+	enCH["文件不存在"] = "The '%s' file isn't exist. \r\n"
 	enCH["添加成功"] = "The [%s] add Success.\r\n"
 	enCH["已经添加"] = "[%s] was Added.\r\n"
 	enCH["项目已存在"] = "The project [%s] is exist.\r\n"
-	enCH["建立项目"] = "create project [%s]."
+	enCH["建立项目"] = "create project [%s].\r\n"
 	enCH["项目挂载在"] = "The project mount at[%s] server."
 	enCH["遍历结束"] = "----list over----"
 	enCH["加载系统路径错误"] = "load sys path has errors."
@@ -100,11 +104,13 @@ func init() {
 	enCH["属性移除失败"] = "%s remove failed,mybe the attributes of [%s] isn't exist."
 	enCH["服务关闭失败"] = "%s Services stoped failed."
 	enCH["工程设置成功"] = "The project path of [%s] setted in [%s]."
+	enCH["工程设置失败"] = "The project path of [%s] setted in [%s] failed."
 	enCH["服务正在启动"] = "%s Start [%s]"
 	enCH["关闭服务"] = "%s Stop [%s]"
 	enCH["发布完成"] = "----Release Complete----"
 	enCH["添加WEB用户成功"] = "Add Web Controller [%s] Success."
 	enCH["移除WEB用户成功"] = "Remove Web Controller [%s] Success."
+	enCH["modulev"] = "[%s] js/module.js versions are inconsistent."
 	enCH["模块创建成功"] = "Create Module Success."
 	enCH["Test运行在"] = "%s Running at [%s]"
 	enCH["-c"] = "Close Console Input Method."
@@ -122,6 +128,7 @@ func init() {
 	enCH["info"] = "info The project infomation\r\nCOMMAND: rm <Service Name>\r\n"
 	enCH["set"] = "set Set project attributes.\r\nCOMMAND: set <Service Name> <AttributeName> <Value> [Value...]\r\n"
 	enCH["ret"] = "ret Remove project attributes.\r\nCOMMAND: set <Service Name> <AttributeName>\r\n"
+	enCH["send"] = "send push data to Service by websocket.\r\nCOMMAND: send <Service Name> <User ID> <UUID> <Value>\r\n"
 	enCH["exit"] = "exit Exit.\r\nCOMMAND: exit\r\n"
 	enCH["lang"] = "lang Language Setting.\r\nCOMMAND: lang <zh/cn>\r\n"
 	enCH["version"] = "version Software Version.\r\nCOMMAND: version\r\n"
@@ -130,6 +137,7 @@ func init() {
 	enCH["webc"] = "webc Start HTTP client server to this.\r\nCOMMAND: webc [HTTP Service IP:PORT]\r\n"
 	enCH["bat"] = "bat Execute local batch file,you can execute manay batch files.\r\n\r\nCOMMAND：bat <batch file Name> [batch file Name...]\r\n"
 	enCH["stat"] = "stat get application status，for example time and so on.\r\nCOMMAND：stat\r\n"
+	enCH["update"] = "update update module.js package\r\nCOMMAND：update <Service Name>\r\n"
 }
 
 /**
@@ -677,13 +685,20 @@ func command(cmds []string) (bool, string) {
 				} else {
 					str = DevPrintln(8, cmds[1]+" "+serverList[cmds[1]].RootPath)
 				}
-
 			} else if len(cmds) > 2 {
 				if serverList[cmds[1]] == nil {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
 				} else {
-					serverList[cmds[1]].SetProject(cmds[2])
-					str = DevPrintln(2, lang["工程设置成功"], cmds[1], serverList[cmds[1]].RootPath)
+					result := serverList[cmds[1]].SetProject(cmds[2])
+					if result == 2 { //module 版本不一致
+						str = DevPrintln(110, lang["modulev"], cmds[1])
+						str += DevPrintln(2, lang["工程设置成功"], cmds[1], serverList[cmds[1]].RootPath)
+					} else if result == 1 {
+						str = DevPrintln(2, lang["工程设置成功"], cmds[1], serverList[cmds[1]].RootPath)
+					} else if result == 0 {
+						str = DevPrintln(2, lang["工程设置失败"], cmds[1], serverList[cmds[1]].RootPath)
+					}
+
 				}
 			} else {
 				str = DevPrintln(8, lang["stp"])
@@ -717,11 +732,14 @@ func command(cmds []string) (bool, string) {
 			}
 			return true, str
 		case "send": //向服务器的WebSocket用户发送信息
-			if serverList[cmds[1]] == nil {
-				str = DevPrintln(335, lang["不存在服务"], cmds[1])
-			} else if len(cmds) > 4 {
-				serverList[cmds[1]].Send(cmds[2], cmds[3], cmds[4])
-				//str = DevPrintln(8, cmds[1]+" "+serverList[cmds[1]].RootPath)
+			if len(cmds) > 1 {
+				if serverList[cmds[1]] == nil {
+					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+				} else if len(cmds) > 4 {
+					serverList[cmds[1]].Send(cmds[2], cmds[3], cmds[4])
+				} else if len(cmds) > 3 {
+					serverList[cmds[1]].Send(cmds[2], "UUID", cmds[4])
+				}
 			} else {
 				str = DevPrintln(8, lang["send"])
 			}
@@ -936,6 +954,19 @@ func command(cmds []string) (bool, string) {
 			return true, str
 		case "stat": //转换地址，获取当前程序
 			str = DevPrintln(7, SysStartDate+"\r\nNow  "+time.Now().Format("2006-01-02 15:04:05"))
+			return true, str
+		case "update": //升级项目module.js
+			if len(cmds) > 1 {
+				if serverList[cmds[1]] == nil {
+					str = DevPrintln(335, lang["不存在服务"], cmds[1])
+				} else {
+					s, _ := filepath.Abs("lib/js/module.js")
+					str = DevPrintln(8, "copy "+s+serverList[cmds[1]].RootPath+"/js/module.js")
+					CopyFile(serverList[cmds[1]].RootPath+"/js/module.js", s)
+				}
+			} else {
+				str = DevPrintln(8, lang["update"])
+			}
 
 			return true, str
 		case "--help":
@@ -946,6 +977,8 @@ func command(cmds []string) (bool, string) {
 			str += DevPrintln(7, lang["stp"])
 			str += DevPrintln(7, lang["ctf"])
 			str += DevPrintln(7, lang["release"])
+			str += DevPrintln(7, lang["update"])
+			str += DevPrintln(7, lang["send"])
 			str += DevPrintln(7, lang["run"])
 			str += DevPrintln(7, lang["shutdown"])
 			str += DevPrintln(7, lang["rm"])

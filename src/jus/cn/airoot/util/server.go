@@ -178,7 +178,7 @@ func (u *JusServer) Start(addr string, printf func(string, int, string)) string 
 /**
  * 设置工程目录
  */
-func (u *JusServer) SetProject(path string) bool {
+func (u *JusServer) SetProject(path string) int {
 	if Exist(path) {
 		rpath, _ := filepath.Abs(path)
 		u.RootPath = rpath
@@ -200,11 +200,17 @@ func (u *JusServer) SetProject(path string) bool {
 		for _, v := range u.GetAttrLike("variable") { //添加项目变量
 			u.AddServerVar("variable", "@"+v[0], v[1])
 		}
-		return true
+		//验证module.js和当前服务器版本是否一致
+		pm := file2Md5(rpath + "/js/module.js")
+		sm := file2Md5(u.SysPath + "/js/module.js")
+		if sm != pm {
+			return 2
+		}
+		return 1
 	} else {
 		u.RootPath = ""
 		fmt.Println("不存在[" + path + "]目录")
-		return false
+		return 0
 	}
 
 }
@@ -500,9 +506,7 @@ func (u *JusServer) jusEditEvt(w http.ResponseWriter, req *http.Request) {
 
 func (u *JusServer) root(w http.ResponseWriter, req *http.Request) {
 
-	if req.URL.Path == "/" {
-
-	} else {
+	if req.URL.Path != "/" {
 		if Index(req.URL.Path, "/juis/") == 0 {
 			u.jusEvt(w, req)
 			return
@@ -531,7 +535,6 @@ func (u *JusServer) root(w http.ResponseWriter, req *http.Request) {
 			w.Write(data)
 			return
 		}
-
 		//判断是否有可用映射
 		if u.hasUrl(req.URL, w, req) {
 			return

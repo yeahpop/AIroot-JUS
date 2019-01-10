@@ -163,7 +163,7 @@ func (a *APIlist) CreateFrom(jus *JusServer, className string) error {
 	a.IsScript = true
 	script := ""
 	path := strings.Replace(className, ".", "/", -1)
-	path = IfStr(CharAt(path, 0) == "$", jus.SysPath+"/code/"+Substring(path, 1, -1), jus.RootPath+"/code/"+path)
+	path = IfStr(CharAt(path, 0) == "$", jus.SysPath+"/"+jus.SrcPath+"/"+Substring(path, 1, -1), jus.RootPath+"/"+jus.SrcPath+"/"+path)
 	file := path + ".html"
 	if Exist(file) {
 		a.IsScript = false
