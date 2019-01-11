@@ -82,10 +82,10 @@ func (p *Package) getDat() string {
 /**
  * 转换给指定用户
  */
-func (p *Package) ToUser(m map[string]*connectElement) bool {
+func (p *Package) ToUser(m map[string]*connectElement) int {
 	r := p.router()
 	if len(r) == 0 {
-		return false
+		return 0
 	}
 	d := []byte(p.from + p.getDat())
 
@@ -104,8 +104,10 @@ func (p *Package) ToUser(m map[string]*connectElement) bool {
 		client := m[p.router()]
 		if client != nil {
 			client.Conn.Write(d)
+		} else {
+			return -1
 		}
 
 	}
-	return true
+	return 1
 }

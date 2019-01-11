@@ -73,7 +73,7 @@ func Substring(s string, start int, end int) string {
 		return ""
 	}
 	ch := []rune(s)
-	if end != -1 {
+	if end > -1 {
 		return string(ch[start:end])
 	}
 	return string(ch[start:])

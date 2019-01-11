@@ -70,6 +70,7 @@ type JusServer struct {
 	attribute     map[string]string  //服务环境变量
 	useClassList  []*element
 	wsUser        *WsUser
+	wsUserCount   int
 	connectedList []*connectElement
 	testConnect   chan byte
 	wsURL         string //websocket 用户验证URL
@@ -338,24 +339,25 @@ func (u *JusServer) wsHandler(ws *websocket.Conn) {
 		cmds = FmtCmd(string(msg[0:n]))
 		if len(cmds) >= 3 {
 			if cmds[0] == "login" {
-				if flag, value := u.havUser(cmds); flag {
+				if flag, value, name := u.havUser(cmds); flag {
 					u.wsUser.RLock()
-					if u.wsUser.list[cmds[1]] != nil {
-						u.wsUser.list[cmds[1]].Conn.Write([]byte("close"))
-						u.wsUser.list[cmds[1]].Conn.Close()
+					if u.wsUser.list[name] != nil {
+						u.wsUser.list[name].Conn.Write([]byte("close"))
+						u.wsUser.list[name].Conn.Close()
 					}
 					u.wsUser.RUnlock()
 					ce.Connected = true
-					ce.Name = cmds[1]
+					ce.Name = name
 					ce.IP_Address = ws.Request().RemoteAddr
 					ce.RemoteAddr = ws.RemoteAddr().String()
 					ce.LocalAddr = ws.LocalAddr().String()
 					u.wsUser.Lock()
-					u.wsUser.list[cmds[1]] = ce
+					u.wsUser.list[name] = ce
 					u.wsUser.Unlock()
-					fmt.Println(cmds[1] + " Login.")
+					fmt.Println(name + " Login.")
 					ws.Write([]byte(value))
 					Dp := 0
+					status := 0
 				roll:
 					for {
 						buf.Reset()
@@ -383,11 +385,16 @@ func (u *JusServer) wsHandler(ws *websocket.Conn) {
 						if buf.Len() == 1 {
 							continue //心跳
 						}
-						pkg := Package{from: cmds[1], data: buf.Bytes()}
+						pkg := Package{from: name, data: buf.Bytes()}
 						u.wsUser.RLock()
-						if pkg.ToUser(u.wsUser.list) == false {
+						status = pkg.ToUser(u.wsUser.list)
+						if status == 0 {
 							u.wsUser.RUnlock()
 							break
+						} else if status == -1 {
+							if pkg.router() == "God" {
+								fmt.Println(name, pkg.getDat())
+							}
 						}
 						u.wsUser.RUnlock()
 
@@ -429,32 +436,39 @@ func (u *JusServer) Send(router string, uuid string, value string) {
 /**
  * 判断是否存在此用户
  */
-func (u *JusServer) havUser(cmds []string) (bool, string) {
+func (u *JusServer) havUser(cmds []string) (bool, string, string) {
+	name := cmds[1]
+	pass := cmds[2]
 	if u.wsURL != "" {
 		data := make(url.Values)
-		data["name"] = []string{cmds[1]}
-		data["pass"] = []string{cmds[2]}
+		data["name"] = []string{name}
+		data["pass"] = []string{pass}
 		res, err := http.PostForm(u.wsURL, data)
 		if err != nil {
-			return false, err.Error()
+			return false, err.Error(), ""
 		}
 		dat, e := ioutil.ReadAll(res.Body)
 		str := string(dat)
 		if e != nil {
-			return false, e.Error()
+			return false, e.Error(), ""
 		}
 		if StringLen(str) > 6 {
 			if Substring(str, 0, 7) == "accept " {
-				return true, str
+				return true, str, name
 			} else {
-				return false, str
+				return false, str, name
 			}
 		} else {
-			return false, ""
+			return false, "", name
 		}
 
 	} else {
-		return true, "accept "
+		if StringLen(name)-1 == LastIndex(name, "*") {
+			u.wsUserCount++
+			name = Substring(name, 0, StringLen(name)-1) + strconv.Itoa(u.wsUserCount)
+			return true, "accept " + name, name
+		}
+		return true, "accept " + name, name
 	}
 
 }

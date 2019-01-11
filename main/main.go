@@ -20,7 +20,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "Airoot platform 0.9.10 &ws"
+var version string = "AIroot platform 0.9.11 &ws"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -738,7 +738,7 @@ func command(cmds []string) (bool, string) {
 				} else if len(cmds) > 4 {
 					serverList[cmds[1]].Send(cmds[2], cmds[3], cmds[4])
 				} else if len(cmds) > 3 {
-					serverList[cmds[1]].Send(cmds[2], "UUID", cmds[4])
+					serverList[cmds[1]].Send(cmds[2], "UUID", cmds[3])
 				}
 			} else {
 				str = DevPrintln(8, lang["send"])
