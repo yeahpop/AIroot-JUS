@@ -143,7 +143,7 @@ func (j *JUS) CreateFrom(root string, domain string, node *HTML, className strin
 		j.cssPath = JUSExist(file + ".css")
 	} else {
 		if file[0] == '$' {
-			j.path = j.CLASS_PATH + "/" + file[1:]
+			j.path = j.CLASS_PATH + file[1:]
 			j.htmlPath = JUSExist(j.path + ".html")
 			j.jsPath = JUSExist(j.path + ".js")
 			j.cssPath = JUSExist(j.path + ".css")
@@ -153,7 +153,7 @@ func (j *JUS) CreateFrom(root string, domain string, node *HTML, className strin
 			j.jsPath = JUSExist(j.path + ".js")
 			j.cssPath = JUSExist(j.path + ".css")
 			if j.htmlPath == "" && j.jsPath == "" && j.cssPath == "" {
-				j.path = j.CLASS_PATH + "/" + file
+				j.path = j.CLASS_PATH + file
 				j.htmlPath = JUSExist(j.path + ".html")
 				j.jsPath = JUSExist(j.path + ".js")
 				j.cssPath = JUSExist(j.path + ".css")
@@ -682,6 +682,8 @@ func (j *JUS) importHTML() {
 	value := ""
 	path := ""
 	fileName := ""
+	key := ""
+	cls := "" //文件类型
 
 	for i := 0; i < len(sets); i++ {
 		value = sets[i].GetAttr("value")
@@ -701,35 +703,38 @@ func (j *JUS) importHTML() {
 			}
 		}
 
-		fl := j.CLASS_PATH + "/" + strings.Replace(path, ".", "/", -1)
-
+		fl := j.CLASS_PATH + strings.Replace(path, ".", "/", -1)
 		lst, err := ioutil.ReadDir(fl)
 		if err == nil {
 			for _, f := range lst {
 				if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
-					j.pkgMap[strings.ToLower(Substring(f.Name(), 0, LastIndex(f.Name(), ".")))] = path + "." + Substring(f.Name(), 0, LastIndex(f.Name(), "."))
+					cls = filepath.Ext(f.Name())
+					if cls == ".html" || cls == ".js" {
+						key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
+						j.pkgMap[strings.ToLower(key)] = path + "." + key
+					}
 					//fmt.Println(strings.ToLower(Substring(f.Name(), 0, LastIndex(f.Name(), "."))), path+"."+Substring(f.Name(), 0, LastIndex(f.Name(), ".")))
 				}
 			}
 		}
 		fl = j.root + "/" + strings.Replace(path, ".", "/", -1)
-
 		lst, err = ioutil.ReadDir(fl)
 		if err == nil {
 			for _, f := range lst {
 				if !f.IsDir() && (fileName == "" || fileName == f.Name()) {
-					j.pkgMap[strings.ToLower(Substring(f.Name(), 0, LastIndex(f.Name(), ".")))] = path + "." + Substring(f.Name(), 0, LastIndex(f.Name(), "."))
+					cls = filepath.Ext(f.Name())
+					if cls == ".html" || cls == ".js" {
+						key = Substring(f.Name(), 0, LastIndex(f.Name(), "."))
+						j.pkgMap[strings.ToLower(key)] = path + "." + key
+					}
 					//fmt.Println(strings.ToLower(Substring(f.Name(), 0, LastIndex(f.Name(), "."))), path+"."+Substring(f.Name(), 0, LastIndex(f.Name(), ".")))
 				}
 			}
 		}
-
 		path = ""
 		fileName = ""
-
 	}
 	j.html.RemoveChildByTagName("@import")
-
 }
 
 /**

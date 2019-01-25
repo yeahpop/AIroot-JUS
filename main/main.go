@@ -4,6 +4,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 
 	//_ "image/jpeg"
 	//_ "image/png"
@@ -20,7 +21,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot platform 0.9.11 &ws"
+var version string = "AIroot Platform 0.10.01 &ws"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -83,7 +84,7 @@ func init() {
 	zhCN["stat"] = "stat 获取当前文件执行状态，例如时间等\r\n命令格式：stat\r\n"
 	zhCN["update"] = "update 更新项目的module.js包\r\n命令格式：update <服务名称>\r\n"
 	enCH["文件不存在"] = "The '%s' file isn't exist. \r\n"
-	enCH["添加成功"] = "The [%s] add Success.\r\n"
+	enCH["添加成功"] = "The [%s] Added Successfully."
 	enCH["已经添加"] = "[%s] was Added.\r\n"
 	enCH["项目已存在"] = "The project [%s] is exist.\r\n"
 	enCH["建立项目"] = "create project [%s].\r\n"
@@ -150,7 +151,8 @@ var SysPath string
 var SysLibPath string
 var SysStartDate string
 var _Count_ int = 0
-var CODE_PATH = "/src"
+var CODE_PATH = "/src" //jus 源代码路径
+var RES_PATH = "/"     //静态资源路径
 
 /**
  * 创建工程目录
@@ -164,15 +166,15 @@ func CreateProjectDir(path string) bool {
 	}
 	os.MkdirAll(path, 0777)
 	os.MkdirAll(path+CODE_PATH, 0777)
-
-	os.MkdirAll(path+"/js", 0777)
+	os.MkdirAll(path+"/"+RES_PATH+"/img", 0777)
+	os.MkdirAll(path+"/"+RES_PATH+"/css", 0777)
+	os.MkdirAll(path+"/"+RES_PATH+"/js", 0777)
 	s, _ := filepath.Abs("lib/js")
-	Copy(s, path+"/js", "")
+	Copy(s, path+"/"+RES_PATH+"/js", "")
 	s, _ = filepath.Abs("lib/icon/")
-	Copy(s, path, "")
-	os.MkdirAll(path+"/img", 0777)
-	os.MkdirAll(path+"/css", 0777)
-	f, e := os.Create(path + "/index.html")
+	Copy(s, path+"/"+RES_PATH+"/img", "")
+
+	f, e := os.Create(path + "/" + RES_PATH + "/index.html")
 	if e == nil {
 		data, _ := GetBytes("./lib/template/index.template")
 		f.Write(data)
@@ -588,7 +590,7 @@ func command(cmds []string) (bool, string) {
 			if len(cmds) > 1 && (zhCN[cmds[1]] == "" || len(cmds[1]) != len([]rune(cmds[1]))) {
 				if serverList[cmds[1]] == nil {
 					serverList[cmds[1]] = &JusServer{}
-					serverList[cmds[1]].CreateServer(SysLibPath, "", CODE_PATH)
+					serverList[cmds[1]].CreateServer(SysLibPath, "", CODE_PATH, RES_PATH)
 					str = DevPrintln(2, lang["添加成功"], cmds[1]) //添加成功
 				} else {
 					str = DevPrintln(335, lang["已经添加"], cmds[1]) //已经添加
@@ -882,10 +884,8 @@ func command(cmds []string) (bool, string) {
 			if len(cmds) > 1 {
 				if cmds[1] == "en" {
 					lang = enCH
-					SetConsoleTitle("AIroot JUS Public Compiler Platform ")
 				} else if cmds[1] == "zh" {
 					lang = zhCN
-					SetConsoleTitle("AIroot JUS 公共编译平台")
 				}
 			} else {
 				str = DevPrintln(7, "您可以输入 <zh> 或者 <en> 来选取中文或者英文.")
@@ -961,8 +961,8 @@ func command(cmds []string) (bool, string) {
 					str = DevPrintln(335, lang["不存在服务"], cmds[1])
 				} else {
 					s, _ := filepath.Abs(SysLibPath + "/js/module.js")
-					str = DevPrintln(8, "copy "+s+" "+serverList[cmds[1]].RootPath+"/js/module.js")
-					CopyFile(serverList[cmds[1]].RootPath+"/js/module.js", s)
+					str = DevPrintln(8, "copy "+s+" "+serverList[cmds[1]].RootPath+"/"+serverList[cmds[1]].ResourcePath+"/js/module.js")
+					CopyFile(serverList[cmds[1]].RootPath+"/"+serverList[cmds[1]].ResourcePath+"/js/module.js", s)
 				}
 			} else {
 				str = DevPrintln(8, lang["update"])
@@ -1022,12 +1022,29 @@ func echo_TJCG(value string) { //添加成功
 
 var exitFlag bool = true
 
+func httpPost() {
+	resp, err := http.Post("http://www.airoot.cn/_version", "application/x-www-form-urlencoded", nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	mess := string(body)
+	if strings.TrimSpace(mess) != version {
+		DevPrintln(159, "Download Latest Version: http://www.airoot.cn/")
+	}
+}
+
 /**
  *
  */
 func main() {
-	lang = zhCN
-	SetConsoleTitle("AIroot JUS 公共编译平台")
+	lang = enCH
+	SetConsoleTitle(version)
+	go httpPost()
 	/*
 		arr := make([]color.RGBA, 0)
 

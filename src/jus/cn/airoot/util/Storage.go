@@ -25,9 +25,11 @@ func init() {
 
 func GetCode(path string) (string, error) {
 	f, err := os.Open(path)
+	if err != nil {
+		fmt.Println(">>", err)
+	}
 	defer f.Close()
 	d, _ := ioutil.ReadAll(f)
-
 	return string(d), err
 }
 
@@ -82,7 +84,7 @@ func CopyFile(dstName, srcName string) (written int64, err error) {
 		return
 	}
 	defer src.Close()
-	dst, err := os.OpenFile(dstName, os.O_WRONLY|os.O_CREATE, 0644)
+	dst, err := os.OpenFile(dstName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 	if err != nil {
 		return
 	}

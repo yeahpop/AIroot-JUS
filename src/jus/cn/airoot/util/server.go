@@ -74,6 +74,7 @@ type JusServer struct {
 	connectedList []*connectElement
 	testConnect   chan byte
 	wsURL         string //websocket 用户验证URL
+	ResourcePath  string //新增本地静态资源Path
 }
 
 /**
@@ -81,7 +82,7 @@ type JusServer struct {
  * @param rootPath	工程类路径
  * 启动函数
  */
-func (u *JusServer) CreateServer(SysPath string, rootPath string, srcPath string) {
+func (u *JusServer) CreateServer(SysPath string, rootPath string, srcPath string, resPath string) {
 	u.Datetime = time.Now()
 	u.SysPath = SysPath
 	u.SrcPath = srcPath
@@ -95,6 +96,7 @@ func (u *JusServer) CreateServer(SysPath string, rootPath string, srcPath string
 	u.wsUser = &WsUser{list: make(map[string]*connectElement)} //初始化
 	u.connectedList = make([]*connectElement, 0)
 	u.testConnect = make(chan byte)
+	u.ResourcePath = resPath
 }
 
 /**
@@ -184,8 +186,8 @@ func (u *JusServer) SetProject(path string) int {
 		rpath, _ := filepath.Abs(path)
 		u.RootPath = rpath
 		u.fServerList = make(map[string]http.Handler)
-		u.fServerList[rpath] = http.FileServer(http.Dir(path))
 		if Exist(u.RootPath + "/.jus") {
+			u.fServerList[rpath] = http.FileServer(http.Dir(path + u.ResourcePath))
 			u.pattern = make(map[string]*urlMap)
 			for _, v := range u.GetAttrLike("pattern") {
 				u.AddProxy(v[0], v[1])
@@ -201,13 +203,15 @@ func (u *JusServer) SetProject(path string) int {
 				u.AddServerVar("variable", "@"+v[0], v[1])
 			}
 			//验证module.js和当前服务器版本是否一致
-			if Exist(rpath + "/js/module.js") {
-				pm := file2Md5(rpath + "/js/module.js")
+			if Exist(rpath + u.ResourcePath + "/js/module.js") {
+				pm := file2Md5(rpath + u.ResourcePath + "/js/module.js")
 				sm := file2Md5(u.SysPath + "/js/module.js")
 				if sm != pm {
 					return 2
 				}
 			}
+		} else {
+			u.fServerList[rpath] = http.FileServer(http.Dir(path))
 		}
 
 		return 1
@@ -482,7 +486,7 @@ func (u *JusServer) jusEvt(w http.ResponseWriter, req *http.Request) {
 		}
 		w.Write(value)
 	} else {
-		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + u.SrcPath + "/"}
+		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/"}
 		className := Substring(req.RequestURI, StringLen(u.jusDirName), LastIndex(req.RequestURI, "."))
 		className = Replace(className, "/", ".")
 		if jus.CreateFrom(u.RootPath+u.SrcPath+"/", "", nil, className) {
@@ -1175,12 +1179,10 @@ func (u *JusServer) Release() {
 			os.MkdirAll(v, 0777)
 		}
 		Copy(u.RootPath, v, u.RootPath+u.SrcPath+"/")
-
 		jusPath := v + u.jusDirName + "/"
 		if u.RootPath != "" {
 			os.MkdirAll(jusPath, 0777)
 		}
-
 		//发布Code,先遍历
 		u.WalkFiles(u.RootPath+u.SrcPath+"/", jusPath)
 	}
@@ -1199,7 +1201,6 @@ func (u *JusServer) WalkFiles(src string, dest string) {
 
 			if fi.IsDir() {
 				os.MkdirAll(aPath, 0777) //建立文件目录
-				//WalkFiles(f, aPath, "")
 			} else {
 				//fmt.Println(dPath)
 				fileType = Substring(aPath, LastIndex(aPath, "."), -1)
