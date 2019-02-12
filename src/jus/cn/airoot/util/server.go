@@ -189,6 +189,19 @@ func (u *JusServer) SetProject(path string) int {
 		if Exist(u.RootPath + "/.jus") {
 			u.fServerList[rpath] = http.FileServer(http.Dir(path + u.ResourcePath))
 			u.pattern = make(map[string]*urlMap)
+			//获取资源目录路径
+			for _, v := range u.GetAttrLike("res") {
+				u.ResourcePath = v[0]
+				fmt.Println("设置资源路径" + v[0])
+			}
+			//获取模块代码路径
+			for _, v := range u.GetAttrLike("src") {
+				u.SrcPath = v[0]
+				fmt.Println("设置模块路径" + v[0])
+			}
+			for _, v := range u.GetAttrLike("pattern") {
+				u.AddProxy(v[0], v[1])
+			}
 			for _, v := range u.GetAttrLike("pattern") {
 				u.AddProxy(v[0], v[1])
 			}
@@ -212,6 +225,8 @@ func (u *JusServer) SetProject(path string) int {
 			}
 		} else {
 			u.fServerList[rpath] = http.FileServer(http.Dir(path))
+			u.ResourcePath = "/"
+			u.SrcPath = ""
 		}
 
 		return 1
@@ -528,7 +543,7 @@ func (u *JusServer) jusEditEvt(w http.ResponseWriter, req *http.Request) {
 func (u *JusServer) root(w http.ResponseWriter, req *http.Request) {
 
 	if req.URL.Path != "/" {
-		if Index(req.URL.Path, "/juis/") == 0 {
+		if u.SrcPath != "" && Index(req.URL.Path, "/juis/") == 0 {
 			u.jusEvt(w, req)
 			return
 		}

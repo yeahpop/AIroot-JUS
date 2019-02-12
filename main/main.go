@@ -21,7 +21,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-var version string = "AIroot Platform 0.10.01 &ws"
+var version string = "AIroot Platform 0.10.02 &ws"
 var lang map[string]string
 
 var zhCN = make(map[string]string, 0)
@@ -194,6 +194,8 @@ func CreateProjectDir(path string) bool {
 	f, e = os.Create(path + "/.jus")
 	defer f.Close()
 	if e == nil {
+		f.WriteString("src " + "/src/\r\n")
+		f.WriteString("res " + "/\r\n")
 		f.WriteString("release-path " + filepath.Dir(abs) + "/" + filepath.Base(abs) + "-release/")
 	}
 	DevPrintln(2, lang["建立项目"], abs)
@@ -590,7 +592,8 @@ func command(cmds []string) (bool, string) {
 			if len(cmds) > 1 && (zhCN[cmds[1]] == "" || len(cmds[1]) != len([]rune(cmds[1]))) {
 				if serverList[cmds[1]] == nil {
 					serverList[cmds[1]] = &JusServer{}
-					serverList[cmds[1]].CreateServer(SysLibPath, "", CODE_PATH, RES_PATH)
+					//serverList[cmds[1]].CreateServer(SysLibPath, "", CODE_PATH, RES_PATH)
+					serverList[cmds[1]].CreateServer(SysLibPath, "", "", "/")
 					str = DevPrintln(2, lang["添加成功"], cmds[1]) //添加成功
 				} else {
 					str = DevPrintln(335, lang["已经添加"], cmds[1]) //已经添加
