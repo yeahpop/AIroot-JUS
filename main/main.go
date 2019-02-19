@@ -1029,6 +1029,7 @@ func httpPost() {
 	resp, err := http.Post("http://www.airoot.cn/_version", "application/x-www-form-urlencoded", nil)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
