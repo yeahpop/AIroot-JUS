@@ -9,6 +9,7 @@
 	<meta http-equiv="expires" content="0">    
 	<meta http-equiv="keywords" content="keyword1,keyword2,keyword3">
 	<meta http-equiv="description" content="This is my page">
+	<script src='js/jquery.min.js'></script>
 	<script src='js/module.js'></script>
 	<style type="text/css">
 		body{
@@ -21,5 +22,25 @@
     <script>
     	document.body.loadModule("Main");
     </script>
+	<script>
+		var url = 'http://yun.safecity119.com:8089/cszz/cszzPart/callBack?action=1&rid=22&pid=1&x=12.2&y=6.32&stat=0';
+			// url: 'http://114.242.47.23:8089/cszz/cszzPart/callBack?action=1&rid=22&pid=1&x=12.2&y=6.32&stat=0';
+		alert(url);
+			$.ajax({
+			url: url,
+			type: 'get',
+			dataType: 'json',
+			async: false, // 使用同步操作
+			timeout: 50000,
+			success: function (data) {
+				alert("ok==="+JSON.stringify(data));
+			},
+			error: function (data) {
+
+				alert(JSON.stringify(data));
+			   // alert(2);
+			}
+		});
+	</SCRIPT>
   </body>
 </html>

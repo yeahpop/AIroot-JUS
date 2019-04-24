@@ -499,6 +499,7 @@ func (u *JusServer) jusEvt(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			value = []byte("500")
 		}
+		w.Header().Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
 		w.Write(value)
 	} else {
 		jus := &JUS{SERVER: u, SYSTEM_PATH: u.SysPath, CLASS_PATH: u.SysPath + "/src/"}
@@ -507,6 +508,7 @@ func (u *JusServer) jusEvt(w http.ResponseWriter, req *http.Request) {
 		if jus.CreateFrom(u.RootPath+u.SrcPath+"/", "", nil, className) {
 			jus.resPath = u.SrcPath
 			b := jus.ToFormatBytes()
+			w.Header().Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
 			w.Header().Add("Content-Length", strconv.Itoa(len(b)))
 			w.Write(b)
 		} else {
@@ -1147,6 +1149,23 @@ func (u *JusServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Re
 			}
 			proxy := httputil.NewSingleHostReverseProxy(remote)
 			req.URL.Path = Substring(urlPath.Path, StringLen(p.pattern), -1)
+			// scheme := "http://"
+			// if req.TLS != nil {
+			// 	scheme = "https://"
+			// }
+			// fmt.Println(">>", req.Method)
+			if req.Method == "OPTIONS" {
+				w.Header().Set("Access-Control-Allow-Origin", "*") //
+				w.Header().Add("Access-Control-Allow-Headers", "content-type, accept, x-auth-token, X-Subject-Token,x-openstack-nova-api-version")
+				w.Header().Add("Access-Control-Allow-Methods", "POST")
+				w.Write([]byte("{\"test\":\"OPTIONS\"}"))
+				return true
+			}
+			w.Header().Add("Access-Control-Allow-Origin", "*") //x-openstack-nova-api-version
+			w.Header().Add("Access-Control-Allow-Headers", "content-type, accept, x-auth-token, X-Subject-Token,x-openstack-nova-api-version")
+			w.Header().Add("Access-Control-Expose-Headers", "X-Subject-Token, x-openstack-nova-api-version,X-Auth-Token")
+			w.Header().Add("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS")
+			w.Header().Add("Access-Control-Allow-Credentials", "true")
 			proxy.ServeHTTP(w, req)
 
 		}
