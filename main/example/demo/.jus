@@ -1,3 +1,4 @@
 release-path E:\Github\AIroot-JUS\main\example/demo-release/ 
 src /code/ 
-pattern-01 /sy/ http://192.168.212.37:8081/ 
+pattern-01 /sy/ http://127.0.0.1:8081/ 
+pattern-02 /pt/ http://www.posat.net/ 

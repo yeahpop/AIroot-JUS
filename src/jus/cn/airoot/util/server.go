@@ -1147,6 +1147,10 @@ func (u *JusServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Re
 			if err != nil {
 				panic(err)
 			}
+			fmt.Println("nihao")
+			for k, v := range w.Header() {
+				fmt.Println(k, v)
+			}
 			proxy := httputil.NewSingleHostReverseProxy(remote)
 			req.URL.Path = Substring(urlPath.Path, StringLen(p.pattern), -1)
 			// scheme := "http://"
@@ -1154,20 +1158,20 @@ func (u *JusServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Re
 			// 	scheme = "https://"
 			// }
 			// fmt.Println(">>", req.Method)
-			if req.Method == "OPTIONS" {
-				w.Header().Set("Access-Control-Allow-Origin", "*") //
-				w.Header().Add("Access-Control-Allow-Headers", "content-type, accept, x-auth-token, X-Subject-Token,x-openstack-nova-api-version")
-				w.Header().Add("Access-Control-Allow-Methods", "POST")
-				w.Write([]byte("{\"test\":\"OPTIONS\"}"))
-				return true
-			}
-			w.Header().Add("Access-Control-Allow-Origin", "*") //x-openstack-nova-api-version
-			w.Header().Add("Access-Control-Allow-Headers", "content-type, accept, x-auth-token, X-Subject-Token,x-openstack-nova-api-version")
-			w.Header().Add("Access-Control-Expose-Headers", "X-Subject-Token, x-openstack-nova-api-version,X-Auth-Token")
-			w.Header().Add("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS")
-			w.Header().Add("Access-Control-Allow-Credentials", "true")
-			proxy.ServeHTTP(w, req)
 
+			//if req.Method == "OPTIONS" {
+			//	w.Header().Set("Access-Control-Allow-Origin", "*") //
+			//	w.Header().Add("Access-Control-Allow-Headers", "content-type, accept, x-auth-token, X-Subject-Token,x-openstack-nova-api-version")
+			//	w.Header().Add("Access-Control-Allow-Methods", "POST")
+			//	w.Write([]byte("{\"test\":\"OPTIONS\"}"))
+			//	return true
+			//}
+			//w.Header().Add("Access-Control-Allow-Origin", "*") //x-openstack-nova-api-version
+			//w.Header().Add("Access-Control-Allow-Headers", "content-type, accept, x-auth-token, X-Subject-Token,x-openstack-nova-api-version")
+			//w.Header().Add("Access-Control-Expose-Headers", "X-Subject-Token, x-openstack-nova-api-version,X-Auth-Token")
+			//w.Header().Add("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS")
+			//w.Header().Add("Access-Control-Allow-Credentials", "true")
+			proxy.ServeHTTP(w, req)
 		}
 		return true
 	}
