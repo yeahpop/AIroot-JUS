@@ -202,9 +202,6 @@ func (u *JusServer) SetProject(path string) int {
 			for _, v := range u.GetAttrLike("pattern") {
 				u.AddProxy(v[0], v[1])
 			}
-			for _, v := range u.GetAttrLike("pattern") {
-				u.AddProxy(v[0], v[1])
-			}
 			for _, v := range u.GetAttrLike("ws_accept") { //添加websocket用户验证url
 				fmt.Println("ws_accept", v[0])
 				u.wsURL = v[0]
@@ -1147,35 +1144,76 @@ func (u *JusServer) hasUrl(urlPath *url.URL, w http.ResponseWriter, req *http.Re
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("nihao")
-			for k, v := range w.Header() {
-				fmt.Println(k, v)
-			}
-			proxy := httputil.NewSingleHostReverseProxy(remote)
+			proxy := NewSingleHostReverseProxy(remote) //httputil.NewSingleHostReverseProxy(remote)
 			req.URL.Path = Substring(urlPath.Path, StringLen(p.pattern), -1)
-			// scheme := "http://"
-			// if req.TLS != nil {
-			// 	scheme = "https://"
-			// }
-			// fmt.Println(">>", req.Method)
-
-			//if req.Method == "OPTIONS" {
-			//	w.Header().Set("Access-Control-Allow-Origin", "*") //
-			//	w.Header().Add("Access-Control-Allow-Headers", "content-type, accept, x-auth-token, X-Subject-Token,x-openstack-nova-api-version")
-			//	w.Header().Add("Access-Control-Allow-Methods", "POST")
-			//	w.Write([]byte("{\"test\":\"OPTIONS\"}"))
-			//	return true
+			//scheme := "http://"
+			//if req.TLS != nil {
+			//	scheme = "https://"
 			//}
-			//w.Header().Add("Access-Control-Allow-Origin", "*") //x-openstack-nova-api-version
-			//w.Header().Add("Access-Control-Allow-Headers", "content-type, accept, x-auth-token, X-Subject-Token,x-openstack-nova-api-version")
-			//w.Header().Add("Access-Control-Expose-Headers", "X-Subject-Token, x-openstack-nova-api-version,X-Auth-Token")
-			//w.Header().Add("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS")
-			//w.Header().Add("Access-Control-Allow-Credentials", "true")
+			//fmt.Println(">>")
+			//fmt.Println(req)
+			if req.Method == "OPTIONS" {
+				w.Header().Set("Access-Control-Allow-Origin", req.Header.Get("Origin")) //
+				w.Header().Add("Access-Control-Allow-Headers", req.Header.Get("Access-Control-Request-Headers"))
+				w.Header().Add("Access-Control-Allow-Methods", req.Method)
+				return true
+			}
 			proxy.ServeHTTP(w, req)
 		}
 		return true
 	}
 	return false
+}
+
+func NewSingleHostReverseProxy(target *url.URL) *httputil.ReverseProxy {
+	targetQuery := target.RawQuery
+	director := func(req *http.Request) {
+		req.URL.Scheme = target.Scheme
+		req.URL.Host = target.Host
+		req.URL.Path = singleJoiningSlash(target.Path, req.URL.Path)
+		if targetQuery == "" || req.URL.RawQuery == "" {
+			req.URL.RawQuery = targetQuery + req.URL.RawQuery
+		} else {
+			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
+		}
+		if _, ok := req.Header["User-Agent"]; !ok {
+			// explicitly disable User-Agent so it's not set to default value
+			req.Header.Set("User-Agent", "")
+		}
+	}
+	return &httputil.ReverseProxy{Transport: roundTripper(rt), Director: director}
+}
+
+// roundTripper makes func signature a http.RoundTripper
+type roundTripper func(*http.Request) (*http.Response, error)
+
+func (f roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func rt(req *http.Request) (*http.Response, error) {
+	res, err := http.DefaultTransport.RoundTrip(req)
+	if err == nil {
+		res.Header.Set("Access-Control-Allow-Origin", req.Header.Get("Origin")) //x-openstack-nova-api-version
+		for k, _ := range res.Header {
+			res.Header.Add("Access-Control-Expose-Headers", k)
+		}
+		res.Header.Add("Access-Control-Allow-Methods", req.Method)
+		res.Header.Add("Access-Control-Allow-Credentials", "true")
+	}
+	return res, err
+}
+
+func singleJoiningSlash(a, b string) string {
+	aslash := strings.HasSuffix(a, "/")
+	bslash := strings.HasPrefix(b, "/")
+	switch {
+	case aslash && bslash:
+		return a + b[1:]
+	case !aslash && !bslash:
+		return a + "/" + b
+	}
+	return a + b
 }
 
 /**

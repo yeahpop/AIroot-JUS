@@ -478,7 +478,7 @@ func (m *MScript) readCareNote(noteType int) string {
 			if ch == end[pos] {
 				pos++
 				if pos == 2 {
-					result = string(sb[:len(sb)-1])
+					result = string(sb)
 					break
 				}
 				if isNewLine {
@@ -488,7 +488,6 @@ func (m *MScript) readCareNote(noteType int) string {
 			} else {
 				pos = 0
 			}
-
 			if isNewLine && (ch == ' ' || ch == '\t') {
 				continue
 			} else {
