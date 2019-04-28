@@ -106,7 +106,11 @@ func (s *Script) initScriptFrom(js *MScript, _this_ string, _pri_ string) string
 				tmp += f.Value
 				at = p - 1
 			}
-			s.hMap[lst[point].Value] = &Attr{tmp, ""}
+			if Index(tmp, "/") != -1 || Index(tmp, "\\") != -1 {
+				s.hMap[tmp] = &Attr{tmp, ""}
+			} else {
+				s.hMap[lst[point].Value] = &Attr{tmp, ""}
+			}
 			continue
 		}
 		tl = append(tl, t)
